@@ -4,7 +4,7 @@ import * as crypto from 'crypto'
 
 @Injectable()
 export class ValidationGuard implements CanActivate {
-    constructor(private readonly configService: ConfigService) { }
+    constructor (private readonly configService: ConfigService) {}
 
     private validate(initData: string) {
         const botToken = this.configService.get<string>('BOT_TOKEN')
