@@ -17,17 +17,18 @@ model User {
 }
 
 model Invoice {
-  id          String   @id @default(uuid())
-  user        User     @relation(fields: [userId], references: [id])
-  userId      Int      @map("user_id")
-  address     String
-  starsAmount Int      @map("stars_amount")
-  tokenAmount Decimal  @map("token_amount")
-  tokenSymbol Symbol   @map("token_symbol")
-  lpFee       Int      @map("liquidity_provider_fee")
-  bchFees     Int      @map("blockchain_fees")
-  hash        String   @map("invoice_hash")
-  createdAt   DateTime @default(now()) @map("created_at")
+  id           String   @id @default(uuid())
+  user         User     @relation(fields: [userId], references: [id])
+  userId       Int      @map("user_id")
+  address      String
+  starsAmount  Int      @map("stars_amount")
+  tokenAmount  Decimal  @map("token_amount")
+  tokenSymbol  Symbol   @map("token_symbol")
+  lpFee        Int      @map("liquidity_provider_fee")
+  bchFees      Int      @map("blockchain_fees")
+  hash         String   @unique @map("invoice_hash")
+  canBeDeleted Boolean  @map("can_be_deleted") @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
 
   @@map("invoices")
 }
@@ -43,7 +44,7 @@ model Transaction {
   lpFee       Int      @map("liquidity_provider_fee")
   bchFees     Int      @map("blockchain_fees")
   status      Status   @default(PENDING)
-  hash        String   @map("transaction_hash")
+  hash        String   @unique @map("transaction_hash")
   createdAt   DateTime @default(now()) @map("created_at")
 
   @@map("transactions")

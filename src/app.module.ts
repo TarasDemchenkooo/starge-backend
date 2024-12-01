@@ -4,6 +4,7 @@ import { AuthModule } from './auth/auth.module'
 import { ConfigModule } from '@nestjs/config'
 import { PaymentsModule } from './payments/payments.module';
 import { CleanupModule } from './cleanup/cleanup.module';
+import { BotModule } from './bot/bot.module';
 
 @Module({
   imports: [
@@ -13,7 +14,8 @@ import { CleanupModule } from './cleanup/cleanup.module';
     UserModule,
     AuthModule,
     PaymentsModule,
-    CleanupModule
+    CleanupModule,
+    BotModule
   ],
 })
 

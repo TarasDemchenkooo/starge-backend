@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import * as tokens from '../../public/tokens.json'
 import axios from 'axios'
@@ -6,6 +6,8 @@ import { Symbol } from '@prisma/client'
 import { InvoiceDto } from './dto/invoice.dto'
 import { PrismaService } from 'src/prisma.service'
 import * as crypto from 'crypto'
+import { BotService } from 'src/bot/bot.service'
+import { Decimal } from '@prisma/client/runtime/library'
 
 @Injectable()
 export class PaymentsService {
@@ -17,7 +19,8 @@ export class PaymentsService {
 
     constructor(
         private readonly configService: ConfigService,
-        private readonly prisma: PrismaService
+        private readonly prisma: PrismaService,
+        private readonly bot: BotService
     ) {
         this.apiUrl = this.configService.get<string>('TONAPI_URL')
         this.apiKey = this.configService.get<string>('TONAPI_KEY')
@@ -50,7 +53,9 @@ export class PaymentsService {
 
         const isAcceptableSlippage = sourceDiff <= this.priceSlippage || targetDiff <= this.priceSlippage
 
-        return isAcceptableSlippage
+        if (!isAcceptableSlippage) {
+            throw new BadRequestException('Price slippage error')
+        }
     }
 
     async calculateFees(source: number, address: string) {
@@ -89,5 +94,21 @@ export class PaymentsService {
                 hash: true
             }
         })
+    }
+
+    async generateLink(id: number, hash: string) {
+        try {
+            const invoice = await this.prisma.invoice.update({
+                where: { userId: id, hash },
+                data: { canBeDeleted: false }
+            })
+
+            await this.validateExchangeAmount(invoice.starsAmount,
+                invoice.tokenAmount as unknown as number, invoice.tokenSymbol)
+
+            return this.bot.generateInvoiceLink(invoice)
+        } catch (error) {
+            throw new NotFoundException('The invoice has expired')
+        }
     }
 }

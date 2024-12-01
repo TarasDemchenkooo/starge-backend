@@ -13,11 +13,12 @@ export class CleanupService implements OnModuleInit {
     }
 
     private async cleanupInvoices() {
-        const deleted = await this.prisma.invoice.deleteMany({
+        this.prisma.invoice.deleteMany({
             where: {
                 createdAt: {
                     lt: new Date(Date.now() - 5 * 60 * 1000)
-                }
+                },
+                canBeDeleted: true
             }
         })
     }
