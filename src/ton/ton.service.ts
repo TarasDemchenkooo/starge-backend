@@ -1,16 +1,11 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
+import { BadRequestException, Injectable } from '@nestjs/common'
 import * as tokens from '../../public/tokens.json'
+import { Invoice, Symbol } from '@prisma/client'
 import axios from 'axios'
-import { Symbol } from '@prisma/client'
-import { InvoiceDto } from './dto/invoice.dto'
-import { PrismaService } from 'src/prisma.service'
-import * as crypto from 'crypto'
-import { BotService } from 'src/bot/bot.service'
-import { Decimal } from '@prisma/client/runtime/library'
+import { ConfigService } from '@nestjs/config'
 
 @Injectable()
-export class PaymentsService {
+export class TonService {
     private apiUrl: string
     private apiKey: string
     private starPrice: number
@@ -18,9 +13,7 @@ export class PaymentsService {
     private comissionRate: number
 
     constructor(
-        private readonly configService: ConfigService,
-        private readonly prisma: PrismaService,
-        private readonly bot: BotService
+        private readonly configService: ConfigService
     ) {
         this.apiUrl = this.configService.get<string>('TONAPI_URL')
         this.apiKey = this.configService.get<string>('TONAPI_KEY')
@@ -68,47 +61,5 @@ export class PaymentsService {
         }
     }
 
-    openInvoice(id: number, invoice: InvoiceDto, lpFee: number, bchFees: number) {
-        const hash = crypto.randomBytes(32).toString('hex')
-
-        return this.prisma.invoice.create({
-            data: {
-                user: {
-                    connect: { id }
-                },
-                address: invoice.address,
-                starsAmount: invoice.source,
-                tokenAmount: invoice.target,
-                tokenSymbol: invoice.route,
-                lpFee,
-                bchFees,
-                hash
-            },
-            select: {
-                address: true,
-                starsAmount: true,
-                tokenAmount: true,
-                tokenSymbol: true,
-                lpFee: true,
-                bchFees: true,
-                hash: true
-            }
-        })
-    }
-
-    async generateLink(id: number, hash: string) {
-        try {
-            const invoice = await this.prisma.invoice.update({
-                where: { userId: id, hash },
-                data: { canBeDeleted: false }
-            })
-
-            await this.validateExchangeAmount(invoice.starsAmount,
-                invoice.tokenAmount as unknown as number, invoice.tokenSymbol)
-
-            return this.bot.generateInvoiceLink(invoice)
-        } catch (error) {
-            throw new NotFoundException('The invoice has expired')
-        }
-    }
+    async transfer(invoice: Invoice) {}
 }

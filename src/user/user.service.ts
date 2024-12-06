@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common'
-import { User } from '@prisma/client'
+import { Invoice, User } from '@prisma/client'
 import { PrismaService } from 'src/prisma.service'
 import { UpdateSettingsDto } from './dto/settings.dto'
+import { settingsSelect, transactionSelect, userSelect } from 'src/selects'
 
 @Injectable()
 export class UserService {
@@ -10,16 +11,7 @@ export class UserService {
     async findOrCreate(id: number): Promise<User> {
         const user = await this.prisma.user.findUnique({
             where: { id },
-            select: {
-                id: true,
-                settings: {
-                    select: {
-                        tokenSymbol: true,
-                        vibration: true,
-                        notifications: true
-                    }
-                }
-            }
+            select: userSelect
         })
 
         if (!user) {
@@ -30,16 +22,7 @@ export class UserService {
                     transactions: { create: [] },
                     settings: { create: {} }
                 },
-                select: {
-                    id: true,
-                    settings: {
-                        select: {
-                            tokenSymbol: true,
-                            vibration: true,
-                            notifications: true
-                        }
-                    }
-                }
+                select: userSelect
             })
         }
 
@@ -50,10 +33,30 @@ export class UserService {
         return this.prisma.settings.update({
             where: { userId: id },
             data: settings,
-            select: {
-                tokenSymbol: true,
-                vibration: true,
-                notifications: true
+            select: settingsSelect
+        })
+    }
+
+    getHistory(id: number) {
+        return this.prisma.transaction.findMany({
+            where: { userId: id },
+            select: transactionSelect
+        })
+    }
+
+    createTransaction(invoice: Invoice) {
+        return this.prisma.transaction.create({
+            data: {
+                user: {
+                    connect: { id: invoice.userId }
+                },
+                address: invoice.address,
+                starsAmount: invoice.starsAmount,
+                tokenAmount: invoice.tokenAmount,
+                tokenSymbol: invoice.tokenSymbol,
+                hash: '',
+                lpFee: invoice.lpFee,
+                bchFees: invoice.bchFees
             }
         })
     }

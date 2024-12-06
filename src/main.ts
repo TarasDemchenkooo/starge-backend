@@ -5,7 +5,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule)
   app.setGlobalPrefix('/api')
   app.enableCors({
-    origin: ['https://93ec-141-11-207-167.ngrok-free.app']
+    origin: ['https://20aa-141-11-207-167.ngrok-free.app']
   })
   await app.listen(process.env.PORT)
 }

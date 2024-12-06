@@ -22,12 +22,12 @@ model Invoice {
   userId       Int      @map("user_id")
   address      String
   starsAmount  Int      @map("stars_amount")
-  tokenAmount  Decimal  @map("token_amount")
+  tokenAmount  Float    @map("token_amount")
   tokenSymbol  Symbol   @map("token_symbol")
   lpFee        Int      @map("liquidity_provider_fee")
   bchFees      Int      @map("blockchain_fees")
   hash         String   @unique @map("invoice_hash")
-  canBeDeleted Boolean  @map("can_be_deleted") @default(true)
+  canBeDeleted Boolean  @default(true) @map("can_be_deleted")
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@map("invoices")
@@ -39,7 +39,7 @@ model Transaction {
   userId      Int      @map("user_id")
   address     String
   starsAmount Int      @map("stars_amount")
-  tokenAmount Decimal  @map("token_amount") @db.Decimal(18, 6)
+  tokenAmount Float    @map("token_amount")
   tokenSymbol Symbol   @map("token_symbol")
   lpFee       Int      @map("liquidity_provider_fee")
   bchFees     Int      @map("blockchain_fees")
