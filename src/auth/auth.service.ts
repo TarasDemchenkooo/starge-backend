@@ -5,7 +5,7 @@ import { JwtService } from '@nestjs/jwt'
 export class AuthService {
     constructor(private readonly jwtService: JwtService) { }
 
-    generateJwt(userId: number) {
+    generateJwt(userId: string) {
         return this.jwtService.sign({ userId })
     }
 }

@@ -1,7 +1,6 @@
-import { Injectable, NotFoundException, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
+import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { Invoice } from '@prisma/client'
-import { CleanerService } from 'src/cleaner/cleaner.service'
 import { PrismaService } from 'src/prisma.service'
 import { TonService } from 'src/ton/ton.service'
 import { UserService } from 'src/user/user.service'
@@ -16,7 +15,6 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
         private readonly configService: ConfigService,
         private readonly prisma: PrismaService,
         private readonly user: UserService,
-        private readonly cleaner: CleanerService,
         private readonly tonService: TonService
     ) {
         this.botToken = this.configService.get<string>('BOT_TOKEN')
@@ -24,20 +22,18 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
     }
 
     onModuleInit() {
-        this.bot.launch()
-
         this.bot.on('pre_checkout_query', async ctx => {
+            const userId = String(ctx.update.pre_checkout_query.from.id)
             const hash = ctx.update.pre_checkout_query.invoice_payload
 
             try {
-                const invoice = await this.prisma.invoice.findUnique({
-                    where: { hash }
+                const invoice = await this.prisma.invoice.update({
+                    where: { userId, hash },
+                    data: { status: 'PAYED' }
                 })
 
-                if (!invoice) {
-                    throw new NotFoundException('The invoice has expired')
-                }
-
+                await this.tonService.validateExchangeAmount(
+                    invoice.starsAmount, invoice.tokenAmount, invoice.tokenSymbol)
                 await this.user.createTransaction(invoice)
                 await ctx.answerPreCheckoutQuery(true)
             } catch (error) {
@@ -46,18 +42,16 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
         })
 
         this.bot.on('successful_payment', async ctx => {
-            const userId = ctx.message.from.id
+            const userId = String(ctx.message.from.id)
             const hash = ctx.message.successful_payment.invoice_payload
-
             const invoice = await this.prisma.invoice.findUnique({
-                where: { hash }
+                where: { userId, hash }
             })
 
-            console.log(hash)
             await this.tonService.transfer(invoice)
-
-            await this.cleaner.deleteInvoice(userId, hash)
         })
+
+        //this.bot.launch()
     }
 
     onModuleDestroy() {

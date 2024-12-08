@@ -18,7 +18,7 @@ export class InvoiceController {
   ) { }
 
   @Post('')
-  async openInvoice(@User() id: number, @Body() { address, source, target, route }: InvoiceDto) {
+  async openInvoice(@User() id: string, @Body() { address, source, target, route }: InvoiceDto) {
     await this.tonService.validateExchangeAmount(source, target, route)
     const { lpFee, bchFees } = await this.tonService.calculateFees(source, address)
 
@@ -26,7 +26,7 @@ export class InvoiceController {
   }
 
   @Get('/:hash')
-  generateLink(@User() id: number, @Param('hash') hash: string) {
+  generateLink(@User() id: string, @Param('hash') hash: string) {
     return this.invoiceService.generateLink(id, hash)
   }
 }

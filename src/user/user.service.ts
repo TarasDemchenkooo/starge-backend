@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { Invoice, User } from '@prisma/client'
+import { Invoice } from '@prisma/client'
 import { PrismaService } from 'src/prisma.service'
 import { UpdateSettingsDto } from './dto/settings.dto'
 import { settingsSelect, transactionSelect, userSelect } from 'src/selects'
@@ -8,7 +8,7 @@ import { settingsSelect, transactionSelect, userSelect } from 'src/selects'
 export class UserService {
     constructor(private prisma: PrismaService) { }
 
-    async findOrCreate(id: number): Promise<User> {
+    async findOrCreate(id: string) {
         const user = await this.prisma.user.findUnique({
             where: { id },
             select: userSelect
@@ -29,7 +29,7 @@ export class UserService {
         return user
     }
 
-    updateUserSettings(id: number, settings: UpdateSettingsDto) {
+    updateUserSettings(id: string, settings: UpdateSettingsDto) {
         return this.prisma.settings.update({
             where: { userId: id },
             data: settings,
@@ -37,7 +37,7 @@ export class UserService {
         })
     }
 
-    getHistory(id: number) {
+    getHistory(id: string) {
         return this.prisma.transaction.findMany({
             where: { userId: id },
             select: transactionSelect

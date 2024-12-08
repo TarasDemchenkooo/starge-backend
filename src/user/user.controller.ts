@@ -19,12 +19,12 @@ export class UserController {
   ) { }
 
   @Patch()
-  updateSettings(@User() id: number, @Body() updateSettingsDto: UpdateSettingsDto) {
+  updateSettings(@User() id: string, @Body() updateSettingsDto: UpdateSettingsDto) {
     return this.userService.updateUserSettings(id, updateSettingsDto)
   }
 
   @Get('history')
-  getHistory(@User() id: number) {
+  getHistory(@User() id: string) {
     return this.userService.getHistory(id)
   }
 }

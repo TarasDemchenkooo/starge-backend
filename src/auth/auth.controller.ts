@@ -13,7 +13,7 @@ export class AuthController {
 
   @Post('')
   @UseGuards(ValidationGuard)
-  async auth(@Body('initData', ValidationPipe) userId: number) {
+  async auth(@Body('initData', ValidationPipe) userId: string) {
     const user = await this.userService.findOrCreate(userId)
     const jwt = this.authService.generateJwt(userId)
 

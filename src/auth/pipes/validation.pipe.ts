@@ -6,6 +6,6 @@ export class ValidationPipe implements PipeTransform {
         const query = new URLSearchParams(initData)
         const user = JSON.parse(query.get('user'))
         
-        return user.id
+        return String(user.id)
     }
   }

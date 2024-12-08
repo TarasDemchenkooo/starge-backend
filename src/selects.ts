@@ -1,10 +1,12 @@
-const settingsSelect = {
+import { Invoice, Settings, Transaction } from "@prisma/client"
+
+const settingsSelect: Partial<Record<keyof Settings, boolean>> = {
     tokenSymbol: true,
     vibration: true,
     notifications: true
 }
 
-const invoiceSelect = {
+const invoiceSelect: Partial<Record<keyof Invoice, boolean>> = {
     address: true,
     starsAmount: true,
     tokenAmount: true,
@@ -14,7 +16,7 @@ const invoiceSelect = {
     hash: true,
 }
 
-const transactionSelect = {
+const transactionSelect: Partial<Record<keyof Transaction, boolean>> = {
     ...invoiceSelect,
     status: true,
     createdAt: true
@@ -26,4 +28,4 @@ const userSelect = {
     settings: { select: settingsSelect }
 }
 
-export { userSelect, settingsSelect, invoiceSelect, transactionSelect, }
+export { userSelect, settingsSelect, invoiceSelect, transactionSelect }

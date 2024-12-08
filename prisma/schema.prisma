@@ -8,7 +8,7 @@ datasource db {
 }
 
 model User {
-  id           Int           @id @unique
+  id           String        @id @unique
   invoices     Invoice[]
   transactions Transaction[]
   settings     Settings?
@@ -17,35 +17,35 @@ model User {
 }
 
 model Invoice {
-  id           String   @id @default(uuid())
-  user         User     @relation(fields: [userId], references: [id])
-  userId       Int      @map("user_id")
-  address      String
-  starsAmount  Int      @map("stars_amount")
-  tokenAmount  Float    @map("token_amount")
-  tokenSymbol  Symbol   @map("token_symbol")
-  lpFee        Int      @map("liquidity_provider_fee")
-  bchFees      Int      @map("blockchain_fees")
-  hash         String   @unique @map("invoice_hash")
-  canBeDeleted Boolean  @default(true) @map("can_be_deleted")
-  createdAt    DateTime @default(now()) @map("created_at")
+  id          String        @id @default(uuid())
+  user        User          @relation(fields: [userId], references: [id])
+  userId      String        @map("user_id")
+  address     String
+  starsAmount Int           @map("stars_amount")
+  tokenAmount Float         @map("token_amount")
+  tokenSymbol Symbol        @map("token_symbol")
+  lpFee       Int           @map("liquidity_provider_fee")
+  bchFees     Int           @map("blockchain_fees")
+  status      InvoiceStatus @default(INITIALIZED)
+  hash        String        @unique @map("invoice_hash")
+  createdAt   DateTime      @default(now()) @map("created_at")
 
   @@map("invoices")
 }
 
 model Transaction {
-  id          String   @id @default(uuid())
-  user        User     @relation(fields: [userId], references: [id])
-  userId      Int      @map("user_id")
+  id          String            @id @default(uuid())
+  user        User              @relation(fields: [userId], references: [id])
+  userId      String            @map("user_id")
   address     String
-  starsAmount Int      @map("stars_amount")
-  tokenAmount Float    @map("token_amount")
-  tokenSymbol Symbol   @map("token_symbol")
-  lpFee       Int      @map("liquidity_provider_fee")
-  bchFees     Int      @map("blockchain_fees")
-  status      Status   @default(PENDING)
-  hash        String   @unique @map("transaction_hash")
-  createdAt   DateTime @default(now()) @map("created_at")
+  starsAmount Int               @map("stars_amount")
+  tokenAmount Float             @map("token_amount")
+  tokenSymbol Symbol            @map("token_symbol")
+  lpFee       Int               @map("liquidity_provider_fee")
+  bchFees     Int               @map("blockchain_fees")
+  status      TransactionStatus @default(PENDING)
+  hash        String            @unique @map("transaction_hash")
+  createdAt   DateTime          @default(now()) @map("created_at")
 
   @@map("transactions")
 }
@@ -53,7 +53,7 @@ model Transaction {
 model Settings {
   id            String  @id @default(uuid())
   user          User    @relation(fields: [userId], references: [id])
-  userId        Int     @unique @map("user_id")
+  userId        String  @unique @map("user_id")
   tokenSymbol   Symbol  @default(TON) @map("token_symbol")
   vibration     Boolean @default(true) @map("in_app_vibration")
   notifications Boolean @default(true) @map("in_app_notifications")
@@ -66,7 +66,13 @@ enum Symbol {
   USDT
 }
 
-enum Status {
+enum InvoiceStatus {
+  INITIALIZED
+  APPROVED
+  PAYED
+}
+
+enum TransactionStatus {
   PENDING
   CONFIRMED
   FAILED
