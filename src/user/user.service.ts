@@ -54,7 +54,7 @@ export class UserService {
                 starsAmount: invoice.starsAmount,
                 tokenAmount: invoice.tokenAmount,
                 tokenSymbol: invoice.tokenSymbol,
-                hash: '',
+                hash: null,
                 lpFee: invoice.lpFee,
                 bchFees: invoice.bchFees
             }

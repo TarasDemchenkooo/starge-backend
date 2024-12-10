@@ -1,62 +1,37 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
+import { Injectable } from '@nestjs/common'
 import { Invoice } from '@prisma/client'
+import { InjectBot } from 'nestjs-telegraf'
 import { PrismaService } from 'src/prisma.service'
 import { TonService } from 'src/ton/ton.service'
 import { UserService } from 'src/user/user.service'
 import { Telegraf } from 'telegraf'
 
 @Injectable()
-export class BotService implements OnModuleInit, OnModuleDestroy {
-    private bot: Telegraf
-    private botToken: string
-
+export class BotService {
     constructor(
-        private readonly configService: ConfigService,
         private readonly prisma: PrismaService,
         private readonly user: UserService,
-        private readonly tonService: TonService
-    ) {
-        this.botToken = this.configService.get<string>('BOT_TOKEN')
-        this.bot = new Telegraf(this.botToken)
-    }
+        private readonly tonService: TonService,
+        @InjectBot() private bot: Telegraf
+    ) { }
 
-    onModuleInit() {
-        this.bot.on('pre_checkout_query', async ctx => {
-            const userId = String(ctx.update.pre_checkout_query.from.id)
-            const hash = ctx.update.pre_checkout_query.invoice_payload
-
-            try {
-                const invoice = await this.prisma.invoice.update({
-                    where: { userId, hash },
-                    data: { status: 'PAYED' }
-                })
-
-                await this.tonService.validateExchangeAmount(
-                    invoice.starsAmount, invoice.tokenAmount, invoice.tokenSymbol)
-                await this.user.createTransaction(invoice)
-                await ctx.answerPreCheckoutQuery(true)
-            } catch (error) {
-                await ctx.answerPreCheckoutQuery(false, 'The invoice has expired')
-            }
+    async checkPayment(userId: string, hash: string) {
+        const invoice = await this.prisma.invoice.update({
+            where: { userId, hash },
+            data: { status: 'PAYED' }
         })
 
-        this.bot.on('successful_payment', async ctx => {
-            const userId = String(ctx.message.from.id)
-            const hash = ctx.message.successful_payment.invoice_payload
-            const invoice = await this.prisma.invoice.findUnique({
-                where: { userId, hash }
-            })
-
-            await this.tonService.transfer(invoice)
-        })
-
-        //this.bot.launch()
+        await this.tonService.validateExchangeAmount(
+            invoice.starsAmount, invoice.tokenAmount, invoice.tokenSymbol)
+        await this.user.createTransaction(invoice)
     }
 
-    onModuleDestroy() {
-        process.once('SIGINT', () => this.bot.stop('SIGINT'))
-        process.once('SIGTERM', () => this.bot.stop('SIGTERM'))
+    async transferTokens(userId: string, hash: string) {
+        const invoice = await this.prisma.invoice.findUnique({
+            where: { userId, hash }
+        })
+
+        await this.tonService.transfer(invoice)
     }
 
     async generateInvoiceLink({ starsAmount, tokenAmount, tokenSymbol, lpFee, bchFees, hash }: Invoice) {
@@ -66,7 +41,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
         const provider_token = ''
         const currency = 'XTR'
         const price = starsAmount + lpFee + bchFees
-        const prices = [{ label: title, amount: price }]
+        const prices = [{ label: title, amount: 1 }]
 
         return this.bot.telegram.createInvoiceLink({
             title,

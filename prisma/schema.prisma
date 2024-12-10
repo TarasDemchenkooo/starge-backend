@@ -44,7 +44,7 @@ model Transaction {
   lpFee       Int               @map("liquidity_provider_fee")
   bchFees     Int               @map("blockchain_fees")
   status      TransactionStatus @default(PENDING)
-  hash        String            @unique @map("transaction_hash")
+  hash        String?            @unique @map("transaction_hash")
   createdAt   DateTime          @default(now()) @map("created_at")
 
   @@map("transactions")

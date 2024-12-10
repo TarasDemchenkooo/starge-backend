@@ -82,7 +82,7 @@ export class InvoiceService {
             const invoiceLink = await this.bot.generateInvoiceLink(invoice)
             return { invoiceLink }
         } catch (error) {
-            throw new NotFoundException('The invoice has expired')
+            throw new NotFoundException('Price slippage exceeded')
         }
     }
 }

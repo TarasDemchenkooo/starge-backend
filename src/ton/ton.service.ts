@@ -47,7 +47,7 @@ export class TonService {
         const isAcceptableSlippage = sourceDiff <= this.priceSlippage || targetDiff <= this.priceSlippage
 
         if (!isAcceptableSlippage) {
-            throw new BadRequestException('Price slippage error')
+            throw new BadRequestException('Price slippage exceeded')
         }
     }
 

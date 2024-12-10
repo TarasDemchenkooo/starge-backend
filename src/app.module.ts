@@ -11,11 +11,12 @@ import { TonModule } from './ton/ton.module'
     ConfigModule.forRoot({
       isGlobal: true
     }),
+    BotModule,
     AuthModule,
     UserModule,
     InvoiceModule,
     BotModule,
-    TonModule,
+    TonModule
   ],
 })
 
