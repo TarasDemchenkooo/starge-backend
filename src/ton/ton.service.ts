@@ -1,25 +1,22 @@
 import { BadRequestException, Injectable } from '@nestjs/common'
 import * as tokens from '../../public/tokens.json'
-import { Invoice, Symbol } from '@prisma/client'
+import { Symbol } from '@prisma/client'
 import axios from 'axios'
 import { ConfigService } from '@nestjs/config'
+import { InvoiceDto } from 'src/invoice/dto/invoice.dto'
 
 @Injectable()
 export class TonService {
-    private apiUrl: string
-    private apiKey: string
-    private starPrice: number
-    private priceSlippage: number
-    private comissionRate: number
+    private readonly apiUrl: string
+    private readonly apiKey: string
+    private readonly starPrice: number
+    private readonly secretKey: string
 
-    constructor(
-        private readonly configService: ConfigService
-    ) {
+    constructor(private readonly configService: ConfigService) {
         this.apiUrl = this.configService.get<string>('TONAPI_URL')
         this.apiKey = this.configService.get<string>('TONAPI_KEY')
         this.starPrice = Number(this.configService.get<string>('STAR_PRICE'))
-        this.priceSlippage = Number(this.configService.get<string>('PRICE_SLIPPAGE'))
-        this.comissionRate = Number(this.configService.get<string>('COMISSION_RATE'))
+        this.secretKey = this.configService.get<string>('SECRET_KEY')
     }
 
     async validateExchangeAmount(source: number, target: number, route: Symbol) {
@@ -44,22 +41,22 @@ export class TonService {
         const sourceDiff = Math.abs(expectedSource - source) / expectedSource
         const targetDiff = Math.abs(expectedTarget - target) / expectedTarget
 
-        const isAcceptableSlippage = sourceDiff <= this.priceSlippage || targetDiff <= this.priceSlippage
+        const priceSlippage = Number(this.configService.get<string>('PRICE_SLIPPAGE'))
+        const isAcceptableSlippage = sourceDiff <= priceSlippage || targetDiff <= priceSlippage
 
         if (!isAcceptableSlippage) {
             throw new BadRequestException('Price slippage exceeded')
         }
     }
 
-    async calculateFees(source: number, address: string) {
-        const lpFee = Math.ceil(source * this.comissionRate)
-        const bchFees = 16
+    async calculateFees(invoice: InvoiceDto): Promise<{ lpFee: number, bchFees: number }> {
+        const comissionRate = Number(this.configService.get<string>('COMISSION_RATE'))
+        const lpFee = Math.ceil(invoice.source * comissionRate)
+        const bchFees = 10
 
         return {
             lpFee,
             bchFees
         }
     }
-
-    async transfer(invoice: Invoice) {}
 }

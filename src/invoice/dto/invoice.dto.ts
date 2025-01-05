@@ -1,15 +1,16 @@
 import { Symbol } from "@prisma/client"
-import { IsEnum, IsNumber, IsString, Max } from "class-validator"
+import { IsEnum, IsPositive, Max, Validate } from "class-validator"
+import { TonAddressValidator } from "../validators/address.validator"
 
 export class InvoiceDto {
-    @IsString()
+    @Validate(TonAddressValidator)
     address: string
 
-    @IsNumber()
+    @IsPositive()
     @Max(50000)
     source: number
 
-    @IsNumber()
+    @IsPositive()
     target: number
 
     @IsEnum(Symbol)

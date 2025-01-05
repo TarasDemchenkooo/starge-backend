@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common'
-import { Invoice } from '@prisma/client'
 import { PrismaService } from 'src/prisma.service'
 import { UpdateSettingsDto } from './dto/settings.dto'
 import { settingsSelect, transactionSelect, userSelect } from 'src/selects'
+import { InvoiceDto } from 'src/invoice/dto/invoice.dto'
 
 @Injectable()
 export class UserService {
@@ -18,7 +18,6 @@ export class UserService {
             return this.prisma.user.create({
                 data: {
                     id,
-                    invoices: { create: [] },
                     transactions: { create: [] },
                     settings: { create: {} }
                 },
@@ -44,16 +43,16 @@ export class UserService {
         })
     }
 
-    createTransaction(invoice: Invoice) {
+    createTransaction(invoice: { userId: string, data: InvoiceDto, lpFee: number, bchFees: number }) {
         return this.prisma.transaction.create({
             data: {
                 user: {
                     connect: { id: invoice.userId }
                 },
-                address: invoice.address,
-                starsAmount: invoice.starsAmount,
-                tokenAmount: invoice.tokenAmount,
-                tokenSymbol: invoice.tokenSymbol,
+                address: invoice.data.address,
+                starsAmount: invoice.data.source,
+                tokenAmount: invoice.data.target,
+                tokenSymbol: invoice.data.route,
                 hash: null,
                 lpFee: invoice.lpFee,
                 bchFees: invoice.bchFees

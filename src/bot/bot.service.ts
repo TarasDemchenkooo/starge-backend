@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common'
-import { Invoice } from '@prisma/client'
+import { Symbol } from '@prisma/client'
 import { InjectBot } from 'nestjs-telegraf'
+import { InvoiceDto } from 'src/invoice/dto/invoice.dto'
 import { PrismaService } from 'src/prisma.service'
 import { TonService } from 'src/ton/ton.service'
 import { UserService } from 'src/user/user.service'
@@ -15,32 +16,24 @@ export class BotService {
         @InjectBot() private bot: Telegraf
     ) { }
 
-    async checkPayment(userId: string, hash: string) {
-        const invoice = await this.prisma.invoice.update({
-            where: { userId, hash },
-            data: { status: 'PAYED' }
-        })
+    async checkPayment(invoice: string) {
+        const data = invoice.split(':')
 
-        await this.tonService.validateExchangeAmount(
-            invoice.starsAmount, invoice.tokenAmount, invoice.tokenSymbol)
-        await this.user.createTransaction(invoice)
+        if (Date.now() > Number(data[6])) {
+            throw new Error('This invoice link has expired')
+        }
+
+        await this.tonService.validateExchangeAmount(Number(data[1]), Number(data[2]), data[3] as Symbol)
     }
 
-    async transferTokens(userId: string, hash: string) {
-        const invoice = await this.prisma.invoice.findUnique({
-            where: { userId, hash }
-        })
-
-        await this.tonService.transfer(invoice)
-    }
-
-    async generateInvoiceLink({ starsAmount, tokenAmount, tokenSymbol, lpFee, bchFees, hash }: Invoice) {
-        const title = `${tokenAmount} ${tokenSymbol}`
-        const description = `Confirm your swap of ${title} for ${starsAmount} STARS`
-        const payload = hash
+    async generateInvoiceLink({ data, lpFee, bchFees }: { data: InvoiceDto, lpFee: number, bchFees: number }) {
+        const title = `${data.target} ${data.route}`
+        const description = `Confirm your swap of ${title} for ${data.source} STARS`
+        const validUntil = Date.now() + 15 * 60 * 1000
+        const payload = [data.address, data.source, data.target, data.route, lpFee, bchFees, validUntil].join(':')
         const provider_token = ''
         const currency = 'XTR'
-        const price = starsAmount + lpFee + bchFees
+        const price = data.source + lpFee + bchFees
         const prices = [{ label: title, amount: 1 }]
 
         return this.bot.telegram.createInvoiceLink({

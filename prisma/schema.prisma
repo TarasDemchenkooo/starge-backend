@@ -9,28 +9,10 @@ datasource db {
 
 model User {
   id           String        @id @unique
-  invoices     Invoice[]
   transactions Transaction[]
   settings     Settings?
 
   @@map("users")
-}
-
-model Invoice {
-  id          String        @id @default(uuid())
-  user        User          @relation(fields: [userId], references: [id])
-  userId      String        @map("user_id")
-  address     String
-  starsAmount Int           @map("stars_amount")
-  tokenAmount Float         @map("token_amount")
-  tokenSymbol Symbol        @map("token_symbol")
-  lpFee       Int           @map("liquidity_provider_fee")
-  bchFees     Int           @map("blockchain_fees")
-  status      InvoiceStatus @default(INITIALIZED)
-  hash        String        @unique @map("invoice_hash")
-  createdAt   DateTime      @default(now()) @map("created_at")
-
-  @@map("invoices")
 }
 
 model Transaction {
@@ -64,12 +46,6 @@ model Settings {
 enum Symbol {
   TON
   USDT
-}
-
-enum InvoiceStatus {
-  INITIALIZED
-  APPROVED
-  PAYED
 }
 
 enum TransactionStatus {

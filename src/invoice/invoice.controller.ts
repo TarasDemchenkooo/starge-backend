@@ -1,9 +1,7 @@
-import { Body, Controller, Get, Param, Post, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common'
+import { Body, Controller, Post, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common'
 import { InvoiceService } from './invoice.service'
-import { User } from 'src/user/decorators/user.decorator'
 import { InvoiceDto } from './dto/invoice.dto'
 import { AuthGuard } from '@nestjs/passport'
-import { TonService } from 'src/ton/ton.service'
 
 @Controller('invoice')
 @UseGuards(AuthGuard('jwt'))
@@ -12,21 +10,10 @@ import { TonService } from 'src/ton/ton.service'
   forbidNonWhitelisted: true
 }))
 export class InvoiceController {
-  constructor(
-    private readonly invoiceService: InvoiceService,
-    private readonly tonService: TonService
-  ) { }
+  constructor(private readonly invoiceService: InvoiceService) { }
 
   @Post('')
-  async openInvoice(@User() id: string, @Body() { address, source, target, route }: InvoiceDto) {
-    await this.tonService.validateExchangeAmount(source, target, route)
-    const { lpFee, bchFees } = await this.tonService.calculateFees(source, address)
-
-    return this.invoiceService.openInvoice(id, { address, source, target, route }, lpFee, bchFees)
-  }
-
-  @Get('/:hash')
-  generateLink(@User() id: string, @Param('hash') hash: string) {
-    return this.invoiceService.generateLink(id, hash)
+  async openInvoice(@Body() invoice: InvoiceDto) {
+    return this.invoiceService.generateLink(invoice)
   }
 }
