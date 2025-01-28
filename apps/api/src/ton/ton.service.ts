@@ -3,20 +3,22 @@ import * as tokens from '../../public/tokens.json'
 import { Symbol } from '@prisma/client'
 import axios from 'axios'
 import { ConfigService } from '@nestjs/config'
-import { InvoiceDto } from 'src/invoice/dto/invoice.dto'
+import { InvoiceDto } from '../invoice/dto/invoice.dto'
 
 @Injectable()
 export class TonService {
     private readonly apiUrl: string
     private readonly apiKey: string
     private readonly starPrice: number
-    private readonly secretKey: string
+    private readonly bchFees_ton: number
+    private readonly bchFees_jetton: number
 
     constructor(private readonly configService: ConfigService) {
         this.apiUrl = this.configService.get<string>('TONAPI_URL')
         this.apiKey = this.configService.get<string>('TONAPI_KEY')
         this.starPrice = Number(this.configService.get<string>('STAR_PRICE'))
-        this.secretKey = this.configService.get<string>('SECRET_KEY')
+        this.bchFees_ton = Number(this.configService.get<string>('BCH_FEES_TON'))
+        this.bchFees_jetton = Number(this.configService.get<string>('BCH_FEES_JETTON'))
     }
 
     async validateExchangeAmount(source: number, target: number, route: Symbol) {
@@ -52,7 +54,7 @@ export class TonService {
     async calculateFees(invoice: InvoiceDto): Promise<{ lpFee: number, bchFees: number }> {
         const comissionRate = Number(this.configService.get<string>('COMISSION_RATE'))
         const lpFee = Math.ceil(invoice.source * comissionRate)
-        const bchFees = 10
+        const bchFees = invoice.route === 'TON' ? this.bchFees_ton : this.bchFees_jetton
 
         return {
             lpFee,

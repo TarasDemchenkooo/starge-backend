@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
-import { BotService } from 'src/bot/bot.service'
-import { TonService } from 'src/ton/ton.service'
+import { BotService } from '../bot/bot.service'
+import { TonService } from '../ton/ton.service'
 import { InvoiceDto } from './dto/invoice.dto'
 
 @Injectable()

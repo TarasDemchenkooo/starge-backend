@@ -2,7 +2,7 @@ import { Body, Controller, Post, UseGuards } from '@nestjs/common'
 import { AuthService } from './auth.service'
 import { ValidationGuard } from './guards/validation.guard'
 import { ValidationPipe } from './pipes/validation.pipe'
-import { UserService } from 'src/user/user.service'
+import { UserService } from '../user/user.service'
 
 @Controller('auth')
 export class AuthController {
