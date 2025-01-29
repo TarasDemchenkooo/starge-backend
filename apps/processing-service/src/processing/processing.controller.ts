@@ -7,7 +7,7 @@ import { WithdrawalRequestDto } from "libs/dto/request.dto"
 
 @Controller()
 export class ProcessingController implements OnModuleInit {
-    private static assetType: Symbol
+    private static asset: Symbol
 
     constructor(
         private readonly configService: ConfigService,
@@ -15,10 +15,10 @@ export class ProcessingController implements OnModuleInit {
     ) { }
 
     onModuleInit() {
-        ProcessingController.assetType = this.configService.get<string>('ASSET_TYPE') as Symbol
+        ProcessingController.asset = this.configService.get('ASSET') as Symbol
     }
 
-    @EventPattern(`${() => ProcessingController.assetType}-requests`)
+    @EventPattern(`${() => ProcessingController.asset}-requests`)
     processTransaction(@Payload(ValidationPipe) data: WithdrawalRequestDto, @Ctx() context: KafkaContext) {
         this.processingService.addToBatch(data, context)
     }

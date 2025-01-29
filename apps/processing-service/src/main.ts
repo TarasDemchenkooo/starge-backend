@@ -12,7 +12,7 @@ async function bootstrap() {
           brokers: ['localhost:29092']
         },
         consumer: {
-          groupId: 'processing-service'
+          groupId: `${process.env.ASSET}-processing-service`
         },
         run: {
           autoCommit: false

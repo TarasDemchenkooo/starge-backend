@@ -9,6 +9,7 @@ import { TonModule } from './ton/ton.module'
 @Module({
   imports: [
     ConfigModule.forRoot({
+      envFilePath: `${process.cwd()}/apps/api/.env`,
       isGlobal: true
     }),
     BotModule,

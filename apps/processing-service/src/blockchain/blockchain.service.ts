@@ -5,28 +5,27 @@ import { Message } from "../processing/types/message"
 import { ExternalMessage } from "./types/external"
 import { InternalMessage } from "./types/internal"
 import { TonClient } from "@ton/ton"
-import { Strategy } from "./types/strategy"
 import { WalletMetadata } from "./types/metadata"
 import { ConfigService } from "@nestjs/config"
 
 @Injectable()
 export class BlockchainService {
     private walletMetadata: WalletMetadata
-    private strategy: Strategy
     private readonly INTERNAL_TRANSFER = 0xae42e5a4
+    private readonly JETTON_TRANSFER = 0x0f8a7ea5
 
     constructor(private readonly configService: ConfigService) {
         this.walletMetadata = {
             address: this.configService.get('WALLET_ADDRESS'),
+            jettonAddress: this.configService.get('JETTON_WALLET_ADDRESS'),
             secretKey: Buffer.from(this.configService.get('WALLET_SECRET_KEY')),
             subwalletId: Number(this.configService.get('WALLET_ID')),
             timeout: Number(this.configService.get('WALLET_TIMEOUT'))
         }
-        this.strategy = this.configService.get('ASSET_TYPE') === 'TON' ? 'ton' : 'jetton'
     }
 
     async sendBatch(client: TonClient, batch: Message[], queryId: number, createdAt: number): Promise<string> {
-        const outActions = this.packActions(batch)
+        const outActions = this.packActions(batch, queryId)
 
         const internalMessage = this.buildInternal({
             address: this.walletMetadata.address,
@@ -97,23 +96,51 @@ export class BlockchainService {
         return int_msg
     }
 
-    private packActions(batch: Message[]) {
-        const out_actions: OutAction[] = batch.map(message => ({
-            type: 'sendMsg',
-            mode: SendMode.PAY_GAS_SEPARATELY,
-            outMsg: internal({
-                to: Address.parse(message.message.address),
-                value: toNano(message.message.amount),
-                bounce: false,
-                body: this.strategy === 'ton' ? undefined : this.buildJettonTransfer()
-            })
-        }))
+    private packActions(batch: Message[], queryId: number) {
+        const strategy = this.configService.get('ASSET') === 'TON' ? 'ton' : 'jetton'
+
+        const out_actions: OutAction[] = batch.map(message => {
+            let address: string
+            let value: number
+            let body: Cell
+
+            if (strategy === 'ton') {
+                address = message.message.address
+                value = message.message.amount
+                body = beginCell().endCell()
+            } else {
+                address = this.walletMetadata.jettonAddress
+                value = 0.05
+                body = this.buildJettonTransfer(message.message.address, message.message.amount, queryId)
+            }
+
+            return {
+                type: 'sendMsg',
+                mode: SendMode.PAY_GAS_SEPARATELY,
+                outMsg: internal({
+                    to: Address.parse(address),
+                    value: toNano(value),
+                    bounce: false,
+                    body
+                })
+            }
+        })
 
         return out_actions
     }
 
-    private buildJettonTransfer(): Cell {
+    private buildJettonTransfer(address: string, amount: number, queryId: number): Cell {
+        const precision = Number(this.configService.get('ASSET_PRECISION'))
+
         return beginCell()
+            .storeUint(this.JETTON_TRANSFER, 32)
+            .storeUint(queryId, 64)
+            .storeCoins(amount * 10 ** precision)
+            .storeAddress(Address.parse(address))
+            .storeAddress(Address.parse(this.walletMetadata.address))
+            .storeBit(0)
+            .storeCoins(1)
+            .storeBit(0)
             .endCell()
     }
 }

@@ -8,9 +8,8 @@
   "scripts": {
     "build": "nest build",
     "start": "nest start",
-    "start1:dev": "nest start starge-backend --watch",
-    "start2:dev": "nest start batcher-service --watch",
-    "start:prod": "node dist/apps/starge-backend/main"
+    "api:dev": "nest start api --watch",
+    "processing:dev": "nest start processing-service --watch"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

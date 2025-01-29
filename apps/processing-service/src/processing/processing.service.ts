@@ -2,7 +2,6 @@ import { Injectable } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import { KafkaContext } from "@nestjs/microservices"
 import { Consumer } from "@nestjs/microservices/external/kafka.interface"
-import { Symbol } from "@prisma/client"
 import { WithdrawalRequestDto } from "libs/dto/request.dto"
 import { Message } from "./types/message"
 import { MonitoringService } from "../monitoring/monitoring.service"
@@ -16,14 +15,12 @@ export class ProcessingService {
     private readonly BATCH_SIZE = 10
     private timer: NodeJS.Timeout
     private readonly timeout = 15 * 1000
-    private assetType: Symbol
 
     constructor(
         private readonly configService: ConfigService,
         private readonly monitoringService: MonitoringService,
         private readonly blockchainService: BlockchainService
     ) {
-        this.assetType = this.configService.get('ASSET_TYPE')
         this.client = this.monitoringService.getClient()
     }
 
@@ -50,7 +47,7 @@ export class ProcessingService {
     }
 
     async processTransaction(batch: Message[], consumer: Consumer) {
-        const topic = `${this.assetType}-requests`
+        const topic = `${this.configService.get('ASSET')}-requests`
         const partitions = [...new Set(batch.map(message => message.partition))]
         consumer.pause([{ topic, partitions }])
         clearTimeout(this.timer)
