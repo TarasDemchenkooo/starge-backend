@@ -1,7 +1,7 @@
 import { IsPositive, IsString, Validate } from "class-validator"
-import { TonAddressValidator } from "libs/validators/address.validator"
+import { TonAddressValidator } from "../validators/address.validator"
 
-export class WithdrawalRequestDto {
+export class PaidRequestDto {
     @Validate(TonAddressValidator)
     address: string
 

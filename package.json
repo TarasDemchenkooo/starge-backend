@@ -9,6 +9,7 @@
     "build": "nest build",
     "start": "nest start",
     "api:dev": "nest start api --watch",
+    "bot:dev": "nest start bot-service --watch",
     "processing:dev": "nest start processing-service --watch"
   },
   "dependencies": {
@@ -80,7 +81,12 @@
     "coverageDirectory": "./coverage",
     "testEnvironment": "node",
     "roots": [
-      "<rootDir>/apps/"
-    ]
+      "<rootDir>/apps/",
+      "<rootDir>/libs/"
+    ],
+    "moduleNameMapper": {
+      "^db/database(|/.*)$": "<rootDir>/libs/database/src/$1",
+      "^shared/shared(|/.*)$": "<rootDir>/libs/shared/src/$1"
+    }
   }
 }

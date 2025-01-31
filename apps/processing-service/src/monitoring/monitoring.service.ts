@@ -2,12 +2,10 @@ import { Injectable } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import { Cron } from "@nestjs/schedule"
 import { Address, TonClient } from "@ton/ton"
-import fs from 'fs/promises'
 
 @Injectable()
 export class MonitoringService {
     private client: TonClient
-    private readonly queryIdPath = '../../public/queryId.json'
 
     constructor(private readonly configService: ConfigService) {
         this.client = new TonClient({
@@ -26,16 +24,16 @@ export class MonitoringService {
         const lastCleanTime = result.stack.readNumber()
         const now = Math.floor(Date.now() / 1000)
 
-        if (now - lastCleanTime > Number(this.configService.get('WALLET_TIMEOUT')) * 2) {
-            try {
-                await fs.writeFile(this.queryIdPath, JSON.stringify({
-                    queryId: 0
-                }, null, 4))
-                console.log('QueryId has been successfully reset')
-            } catch (error) {
-                console.error('Error while resetting queryId: ', error)
-            }
-        }
+        // if (now - lastCleanTime > Number(this.configService.get('WALLET_TIMEOUT')) * 2) {
+        //     try {
+        //         await fs.writeFile(this.queryIdPath, JSON.stringify({
+        //             queryId: 0
+        //         }, null, 4))
+        //         console.log('QueryId has been successfully reset')
+        //     } catch (error) {
+        //         console.error('Error while resetting queryId: ', error)
+        //     }
+        // }
     }
 
     getClient() {
@@ -43,14 +41,15 @@ export class MonitoringService {
     }
 
     async getQueryId(): Promise<number> {
-        const data = await fs.readFile(this.queryIdPath, 'utf-8')
-        return JSON.parse(data).queryId
+        // const data = await fs.readFile(this.queryIdPath, 'utf-8')
+        // return JSON.parse(data).queryId
+        return new Promise(res => res(0))
     }
 
     async nextQueryId() {
-        const queryId = await this.getQueryId()
-        await fs.writeFile(this.queryIdPath, JSON.stringify({
-            queryId: queryId + 1
-        }, null, 4))
+        // const queryId = await this.getQueryId()
+        // await fs.writeFile(this.queryIdPath, JSON.stringify({
+        //     queryId: queryId + 1
+        // }, null, 4))
     }
 }

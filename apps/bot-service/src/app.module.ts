@@ -1,17 +1,15 @@
 import { Module } from '@nestjs/common'
-import { UserModule } from './user/user.module'
-import { AuthModule } from './auth/auth.module'
+import { AppBotModule } from './app/app-bot.module'
 import { ConfigModule } from '@nestjs/config'
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      envFilePath: `${process.cwd()}/apps/api/.env`,
+      envFilePath: `${process.cwd()}/apps/bot-service/.env`,
       isGlobal: true
     }),
-    AuthModule,
-    UserModule
-  ],
+    AppBotModule
+  ]
 })
 
 export class AppModule { }

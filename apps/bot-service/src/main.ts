@@ -9,16 +9,17 @@ async function bootstrap() {
       transport: Transport.KAFKA,
       options: {
         client: {
-          brokers: ['localhost:29092']
+          clientId: 'payment',
+          brokers: ['localhost:29092'],
         },
         consumer: {
-          groupId: `${process.env.ASSET}-processing-service`
-        }
-      }
-    }
+          groupId: 'payment-service',
+        },
+      },
+    },
   )
 
-  app.listen()
+  await app.listen()
 }
 
 bootstrap()

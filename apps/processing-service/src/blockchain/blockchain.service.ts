@@ -43,7 +43,12 @@ export class BlockchainService {
             createdAt
         })
 
-        await client.sendFile(externalMessage.toBoc())
+        try {
+            await client.sendFile(externalMessage.toBoc())
+        } catch (error) {
+            throw new Error(`Error while sending an external message.\nReason: ${error}`)
+        }
+
         return externalMessage.hash().toString('hex')
     }
 
@@ -97,34 +102,30 @@ export class BlockchainService {
     }
 
     private packActions(batch: Message[], queryId: number) {
-        const strategy = this.configService.get('ASSET') === 'TON' ? 'ton' : 'jetton'
+        let out_actions: OutAction[]
 
-        const out_actions: OutAction[] = batch.map(message => {
-            let address: string
-            let value: number
-            let body: Cell
-
-            if (strategy === 'ton') {
-                address = message.message.address
-                value = message.message.amount
-                body = beginCell().endCell()
-            } else {
-                address = this.walletMetadata.jettonAddress
-                value = 0.05
-                body = this.buildJettonTransfer(message.message.address, message.message.amount, queryId)
-            }
-
-            return {
+        if (this.configService.get('ASSET') === 'TON') {
+            out_actions = batch.map(({ message }) => ({
                 type: 'sendMsg',
                 mode: SendMode.PAY_GAS_SEPARATELY,
                 outMsg: internal({
-                    to: Address.parse(address),
-                    value: toNano(value),
-                    bounce: false,
-                    body
+                    to: Address.parse(message.address),
+                    value: toNano(message.amount),
+                    bounce: false
                 })
-            }
-        })
+            }))
+        } else {
+            out_actions = batch.map(({ message }) => ({
+                type: 'sendMsg',
+                mode: SendMode.PAY_GAS_SEPARATELY,
+                outMsg: internal({
+                    to: Address.parse(this.walletMetadata.jettonAddress),
+                    value: toNano(0.05),
+                    bounce: false,
+                    body: this.buildJettonTransfer(message.address, message.amount, queryId)
+                })
+            }))
+        }
 
         return out_actions
     }

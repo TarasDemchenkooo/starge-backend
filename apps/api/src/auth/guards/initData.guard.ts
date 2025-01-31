@@ -3,11 +3,11 @@ import { ConfigService } from "@nestjs/config"
 import * as crypto from 'crypto'
 
 @Injectable()
-export class ValidationGuard implements CanActivate {
+export class InitDataGuard implements CanActivate {
     constructor(private readonly configService: ConfigService) { }
 
     private validate(initData: string) {
-        const botToken = this.configService.get<string>('BOT_TOKEN')
+        const botToken = this.configService.get('BOT_TOKEN')
         const query = new URLSearchParams(initData)
 
         const hash = query.get("hash")

@@ -2,19 +2,19 @@ import { Injectable } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import { KafkaContext } from "@nestjs/microservices"
 import { Consumer } from "@nestjs/microservices/external/kafka.interface"
-import { WithdrawalRequestDto } from "libs/dto/request.dto"
 import { Message } from "./types/message"
 import { MonitoringService } from "../monitoring/monitoring.service"
 import { BlockchainService } from "../blockchain/blockchain.service"
 import { TonClient } from "@ton/ton"
+import { BatchConfig } from "./types/batchConfig"
+import { PaidRequestDto } from "@shared"
 
 @Injectable()
 export class ProcessingService {
     private client: TonClient
     private buffer: Message[] = []
-    private readonly BATCH_SIZE = 10
     private timer: NodeJS.Timeout
-    private readonly timeout = 15 * 1000
+    private readonly batchConfig: BatchConfig
 
     constructor(
         private readonly configService: ConfigService,
@@ -22,9 +22,13 @@ export class ProcessingService {
         private readonly blockchainService: BlockchainService
     ) {
         this.client = this.monitoringService.getClient()
+        this.batchConfig = {
+            size: Number(configService.get('BATCH_SIZE')),
+            timeout: Number(configService.get('BATCH_TIMEOUT')) * 1000
+        }
     }
 
-    addToBatch(data: WithdrawalRequestDto, context: KafkaContext) {
+    addToBatch(data: PaidRequestDto, context: KafkaContext) {
         const consumer = context.getConsumer()
 
         this.buffer.push({
@@ -33,7 +37,7 @@ export class ProcessingService {
             offset: context.getMessage().offset
         })
 
-        if (this.buffer.length === this.BATCH_SIZE) {
+        if (this.buffer.length === this.batchConfig.size) {
             this.processTransaction(this.buffer, consumer)
         } else {
             if (!this.timer) {
@@ -41,7 +45,7 @@ export class ProcessingService {
                     if (this.buffer.length !== 0) {
                         this.processTransaction(this.buffer, consumer)
                     }
-                }, this.timeout)
+                }, this.batchConfig.timeout)
             }
         }
     }
@@ -58,16 +62,6 @@ export class ProcessingService {
             const queryId = await this.monitoringService.getQueryId()
             const createdAt = Math.floor(Date.now() / 1000) - 60
             await this.blockchainService.sendBatch(this.client, batch, queryId, createdAt)
-
-            partitions.forEach(async partition => {
-                const partitionedMessages = batch.filter(message => message.partition === partition)
-                const { offset } = partitionedMessages.reduce((max, current) => {
-                    return BigInt(current.offset) > BigInt(max.offset) ? current : max
-                })
-
-                await consumer.commitOffsets([{ topic, partition, offset }])
-            })
-
             await this.monitoringService.nextQueryId()
         } catch (error) {
             console.error(error)

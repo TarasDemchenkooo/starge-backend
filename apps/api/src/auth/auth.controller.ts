@@ -1,7 +1,7 @@
 import { Body, Controller, Post, UseGuards } from '@nestjs/common'
 import { AuthService } from './auth.service'
-import { ValidationGuard } from './guards/validation.guard'
-import { ValidationPipe } from './pipes/validation.pipe'
+import { InitDataGuard } from './guards/initData.guard'
+import { InitDataPipe } from './pipes/initData.pipe'
 import { UserService } from '../user/user.service'
 
 @Controller('auth')
@@ -12,8 +12,8 @@ export class AuthController {
   ) { }
 
   @Post('')
-  @UseGuards(ValidationGuard)
-  async auth(@Body('initData', ValidationPipe) userId: string) {
+  @UseGuards(InitDataGuard)
+  async auth(@Body('initData', InitDataPipe) userId: string) {
     const user = await this.userService.findOrCreate(userId)
     const jwt = this.authService.generateJwt(userId)
 

@@ -1,25 +1,14 @@
-import { Controller, OnModuleInit, ValidationPipe } from "@nestjs/common"
+import { Controller, ValidationPipe } from "@nestjs/common"
 import { ProcessingService } from "./processing.service"
 import { Ctx, EventPattern, KafkaContext, Payload } from "@nestjs/microservices"
-import { ConfigService } from "@nestjs/config"
-import { Symbol } from "@prisma/client"
-import { WithdrawalRequestDto } from "libs/dto/request.dto"
+import { PaidRequestDto } from "@shared"
 
 @Controller()
-export class ProcessingController implements OnModuleInit {
-    private static asset: Symbol
+export class ProcessingController {
+    constructor(private readonly processingService: ProcessingService) { }
 
-    constructor(
-        private readonly configService: ConfigService,
-        private readonly processingService: ProcessingService
-    ) { }
-
-    onModuleInit() {
-        ProcessingController.asset = this.configService.get('ASSET') as Symbol
-    }
-
-    @EventPattern(`${() => ProcessingController.asset}-requests`)
-    processTransaction(@Payload(ValidationPipe) data: WithdrawalRequestDto, @Ctx() context: KafkaContext) {
+    @EventPattern(`${process.env.ASSET}-requests`)
+    processTransaction(@Payload(ValidationPipe) data: PaidRequestDto, @Ctx() context: KafkaContext) {
         this.processingService.addToBatch(data, context)
     }
 }

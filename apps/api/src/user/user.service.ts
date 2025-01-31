@@ -1,21 +1,30 @@
-import { Injectable } from '@nestjs/common'
-import { PrismaService } from '../prisma.service'
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common'
 import { UpdateSettingsDto } from './dto/settings.dto'
 import { settingsSelect, transactionSelect, userSelect } from '../selects'
-import { InvoiceDto } from '../invoice/dto/invoice.dto'
+import { ClientKafka } from '@nestjs/microservices'
+import { DatabaseService } from '@db'
+import { InvoiceDto } from '@shared'
 
 @Injectable()
-export class UserService {
-    constructor(private prisma: PrismaService) { }
+export class UserService implements OnModuleInit {
+    constructor(
+        private readonly db: DatabaseService,
+        @Inject('PAYMENT_SERVICE') private readonly paymentProducer: ClientKafka
+    ) { }
+
+    async onModuleInit() {
+        this.paymentProducer.subscribeToResponseOf('payments')
+        await this.paymentProducer.connect()
+    }
 
     async findOrCreate(id: string) {
-        const user = await this.prisma.user.findUnique({
+        const user = await this.db.user.findUnique({
             where: { id },
             select: userSelect
         })
 
         if (!user) {
-            return this.prisma.user.create({
+            return this.db.user.create({
                 data: {
                     id,
                     transactions: { create: [] },
@@ -29,41 +38,21 @@ export class UserService {
     }
 
     updateUserSettings(id: string, settings: UpdateSettingsDto) {
-        return this.prisma.settings.update({
+        return this.db.settings.update({
             where: { userId: id },
             data: settings,
             select: settingsSelect
         })
     }
 
-    getHistory(id: string) {
-        return this.prisma.transaction.findMany({
-            where: { userId: id },
-            select: transactionSelect
-        })
+    async generateLink(invoice: InvoiceDto) {
+        return this.paymentProducer.send<string, InvoiceDto>('payments', invoice)
     }
 
-    createTransaction(invoice: {
-        userId: string,
-        data: InvoiceDto,
-        lpFee: number,
-        bchFees: number,
-        chargeId: string,
-    }) {
-        return this.prisma.transaction.create({
-            data: {
-                user: {
-                    connect: { id: invoice.userId }
-                },
-                address: invoice.data.address,
-                starsAmount: invoice.data.source,
-                tokenAmount: invoice.data.target,
-                tokenSymbol: invoice.data.route,
-                chargeId: invoice.chargeId,
-                hash: null,
-                lpFee: invoice.lpFee,
-                bchFees: invoice.bchFees
-            }
+    getHistory(id: string) {
+        return this.db.transaction.findMany({
+            where: { userId: id },
+            select: transactionSelect
         })
     }
 }

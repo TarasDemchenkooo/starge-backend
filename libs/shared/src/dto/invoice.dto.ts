@@ -1,6 +1,6 @@
 import { Symbol } from "@prisma/client"
 import { IsEnum, IsPositive, Max, Validate } from "class-validator"
-import { TonAddressValidator } from "libs/validators/address.validator"
+import { TonAddressValidator } from "../validators/address.validator"
 
 export class InvoiceDto {
     @Validate(TonAddressValidator)
