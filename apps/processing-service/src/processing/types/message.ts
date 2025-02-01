@@ -1,7 +1,7 @@
-import { WithdrawalRequestDto } from "libs/dto/request.dto"
+import { PaidRequestDto } from "@shared"
 
 export interface Message {
-    message: WithdrawalRequestDto
+    message: PaidRequestDto
     partition: number
     offset: string
 }

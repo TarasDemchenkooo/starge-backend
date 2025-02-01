@@ -9,15 +9,15 @@ import { DatabaseModule } from '@db'
     DatabaseModule,
     ClientsModule.register([
       {
-        name: 'PAYMENT_SERVICE',
+        name: 'TELEGRAM_PAYMENT_SERVICE',
         transport: Transport.KAFKA,
         options: {
           client: {
-            clientId: 'payment',
+            clientId: 'telegram-payment',
             brokers: ['localhost:29092'],
           },
           consumer: {
-            groupId: 'payment-service'
+            groupId: 'telegram-payment'
           }
         },
       },

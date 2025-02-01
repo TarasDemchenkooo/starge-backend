@@ -13,7 +13,7 @@ export class AppBotUpdate {
 
         try {
             await this.appBotService.checkPayment(invoice)
-            await this.appBotService.processPayment(String(ctx.preCheckoutQuery.from.id), invoice, 'ruchejnzy748ddhnwojsh8337378dn')
+            await this.appBotService.processPayment(String(ctx.preCheckoutQuery.from.id), invoice, '1ruchejnzy748ddnwojsh8337378dn')
             //await ctx.answerPreCheckoutQuery(true)
         } catch (error) {
             await ctx.answerPreCheckoutQuery(false, error.message)

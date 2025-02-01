@@ -20,11 +20,11 @@ import { DatabaseModule } from "@db"
         }),
         ClientsModule.register([
             {
-                name: 'PROCESSING_SERVICE',
+                name: 'BATCH_PROCESSING_SERVICE',
                 transport: Transport.KAFKA,
                 options: {
                     client: {
-                        clientId: 'processing',
+                        clientId: 'batch-processing',
                         brokers: ['localhost:29092'],
                     },
                     producerOnlyMode: true,

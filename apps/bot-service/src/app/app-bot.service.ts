@@ -1,5 +1,4 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common'
-import { Symbol } from '@prisma/client'
 import { InjectBot } from 'nestjs-telegraf'
 import { Telegraf } from 'telegraf'
 import { ClientKafka } from '@nestjs/microservices'
@@ -7,7 +6,7 @@ import { DatabaseService } from '@db'
 import { InvoiceDto, PaidRequestDto } from '@shared'
 import { ConfigService } from '@nestjs/config'
 import { PaymentParams } from './types/paymentParams'
-import assets from './assets/assets.json'
+import * as assets from './assets/assets.json'
 import axios from 'axios'
 import { parseInvoice } from './utils/invoiceParser'
 
@@ -21,7 +20,7 @@ export class AppBotService {
         private readonly db: DatabaseService,
         private readonly configService: ConfigService,
         @InjectBot('app') private readonly appBot: Telegraf,
-        @Inject('PROCESSING_SERVICE') private readonly processingProducer: ClientKafka
+        @Inject('BATCH_PROCESSING_SERVICE') private readonly processingProducer: ClientKafka
     ) {
         this.paymentParams = {
             starPrice: Number(this.configService.get('STAR_PRICE')),

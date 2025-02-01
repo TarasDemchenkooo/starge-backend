@@ -2,6 +2,11 @@ import { Controller, ValidationPipe } from "@nestjs/common"
 import { ProcessingService } from "./processing.service"
 import { Ctx, EventPattern, KafkaContext, Payload } from "@nestjs/microservices"
 import { PaidRequestDto } from "@shared"
+import * as dotenv from 'dotenv'
+
+dotenv.config({
+    path: `${process.cwd()}/apps/processing-service/.env`
+})
 
 @Controller()
 export class ProcessingController {

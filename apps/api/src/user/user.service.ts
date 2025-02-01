@@ -9,7 +9,7 @@ import { InvoiceDto } from '@shared'
 export class UserService implements OnModuleInit {
     constructor(
         private readonly db: DatabaseService,
-        @Inject('PAYMENT_SERVICE') private readonly paymentProducer: ClientKafka
+        @Inject('TELEGRAM_PAYMENT_SERVICE') private readonly paymentProducer: ClientKafka
     ) { }
 
     async onModuleInit() {

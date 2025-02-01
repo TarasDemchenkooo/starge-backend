@@ -1,11 +1,28 @@
 import { Module } from "@nestjs/common"
-import { MonitoringService } from "../monitoring/monitoring.service"
 import { ProcessingController } from "./processing.controller"
 import { ProcessingService } from "./processing.service"
-import { BlockchainService } from "../blockchain/blockchain.service"
+import { DatabaseModule } from "@db"
+import { ClientsModule, Transport } from "@nestjs/microservices"
+import { BlockchainModule } from "../blockchain/blockchain.module"
 
 @Module({
-  imports: [MonitoringService, BlockchainService],
+  imports: [
+    DatabaseModule,
+    BlockchainModule,
+    ClientsModule.register([
+      {
+        name: 'BATCH_MONITORING_SERVICE',
+        transport: Transport.KAFKA,
+        options: {
+          client: {
+            clientId: 'batch-monitoring',
+            brokers: ['localhost:29092'],
+          },
+          producerOnlyMode: true,
+        },
+      },
+    ])
+  ],
   controllers: [ProcessingController],
   providers: [ProcessingService],
 })
