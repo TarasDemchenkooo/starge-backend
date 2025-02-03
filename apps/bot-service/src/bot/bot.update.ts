@@ -1,19 +1,23 @@
 import { Ctx, On, Update } from "nestjs-telegraf"
 import { Context } from "telegraf"
 import ExtendedContext from "./types/extendedContext"
-import { AppBotService } from "./app-bot.service"
+import { BotService } from "./bot.service"
 
 @Update()
-export class AppBotUpdate {
-    constructor(private readonly appBotService: AppBotService) { }
+export class BotUpdate {
+    constructor(private readonly botService: BotService) { }
 
     @On('pre_checkout_query')
     async preCheckoutQuery(@Ctx() ctx: Context) {
         const invoice = ctx.preCheckoutQuery.invoice_payload
 
         try {
-            await this.appBotService.checkPayment(invoice)
-            await this.appBotService.processPayment(String(ctx.preCheckoutQuery.from.id), invoice, '1ruchejnzy748ddnwojsh8337378dn')
+            await this.botService.checkPayment(invoice)
+            await this.botService.processPayment(
+                String(ctx.preCheckoutQuery.from.id),
+                invoice,
+                String(Math.random())
+            )
             //await ctx.answerPreCheckoutQuery(true)
         } catch (error) {
             await ctx.answerPreCheckoutQuery(false, error.message)
@@ -26,6 +30,6 @@ export class AppBotUpdate {
         const invoice = ctx.message.successful_payment.invoice_payload
         const chargeId = ctx.message.successful_payment.telegram_payment_charge_id
 
-        await this.appBotService.processPayment(userId, invoice, chargeId)
+        await this.botService.processPayment(userId, invoice, chargeId)
     }
 }

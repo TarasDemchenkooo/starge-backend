@@ -1,25 +1,14 @@
 import { NestFactory } from '@nestjs/core'
 import { AppModule } from './app.module'
-import { MicroserviceOptions, Transport } from '@nestjs/microservices'
+import { getBotToken } from 'nestjs-telegraf'
 
 async function bootstrap() {
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
-    AppModule,
-    {
-      transport: Transport.KAFKA,
-      options: {
-        client: {
-          clientId: 'telegram-bots',
-          brokers: ['localhost:29092'],
-        },
-        consumer: {
-          groupId: 'telegram-bots',
-        },
-      },
-    },
-  )
+  const app = await NestFactory.create(AppModule)
 
-  await app.listen()
+  const bot = app.get(getBotToken())
+  app.use(bot.webhookCallback(process.env.WEBHOOK_PATH))
+
+  await app.listen(process.env.PORT)
 }
 
 bootstrap()
