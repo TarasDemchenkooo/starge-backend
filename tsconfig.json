@@ -24,7 +24,7 @@
       ],
       "@shared": [
         "libs/shared/src"
-      ],
+      ]
     }
   }
 }

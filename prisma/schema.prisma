@@ -2,6 +2,10 @@ generator client {
   provider = "prisma-client-js"
 }
 
+generator json {
+  provider = "prisma-json-types-generator"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -56,10 +60,11 @@ enum TransactionStatus {
 }
 
 model Wallet {
-  id      String       @id @default(uuid())
-  address String       @unique
-  status  WalletStatus @default(ACTIVE)
-  queryId Float        @default(0) @map("query_id")
+  id          String       @id @default(uuid())
+  address     String       @unique
+  status      WalletStatus @default(ACTIVE)
+  /// [usedQueries]
+  usedQueries Json         @default("[]") @map("used_queries")
 
   @@map("wallets")
 }

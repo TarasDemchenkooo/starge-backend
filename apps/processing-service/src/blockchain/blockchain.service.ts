@@ -1,20 +1,26 @@
 import { Injectable } from "@nestjs/common"
 import { Address, beginCell, Cell, internal, OutAction, SendMode, storeOutList, toNano } from "@ton/core"
 import { sign } from "@ton/crypto"
-import { Message } from "../processing/types/message"
 import { ExternalMessage } from "./types/external"
 import { InternalMessage } from "./types/internal"
 import { TonClient } from "@ton/ton"
 import { WalletMetadata } from "./types/metadata"
 import { ConfigService } from "@nestjs/config"
+import { PaidRequestDto } from "@shared"
 
 @Injectable()
 export class BlockchainService {
-    private walletMetadata: WalletMetadata
+    private readonly client: TonClient
+    private readonly walletMetadata: WalletMetadata
     private readonly INTERNAL_TRANSFER = 0xae42e5a4
     private readonly JETTON_TRANSFER = 0x0f8a7ea5
 
     constructor(private readonly configService: ConfigService) {
+        this.client = new TonClient({
+            endpoint: this.configService.get('TONCENTER_URL'),
+            apiKey: this.configService.get('TONCENTER_KEY')
+        })
+
         this.walletMetadata = {
             address: this.configService.get('WALLET_ADDRESS'),
             jettonAddress: this.configService.get('JETTON_WALLET_ADDRESS'),
@@ -24,7 +30,7 @@ export class BlockchainService {
         }
     }
 
-    async sendBatch(client: TonClient, batch: Message[], queryId: number, createdAt: number): Promise<string> {
+    async sendBatch(batch: PaidRequestDto[], queryId: number): Promise<string> {
         const outActions = this.packActions(batch, queryId)
 
         const internalMessage = this.buildInternal({
@@ -40,11 +46,11 @@ export class BlockchainService {
             queryId,
             subwalletId: this.walletMetadata.subwalletId,
             timeout: this.walletMetadata.timeout,
-            createdAt
+            createdAt: Math.floor(Date.now() / 1000) - 60
         })
 
         try {
-            await client.sendFile(externalMessage.toBoc())
+            await this.client.sendFile(externalMessage.toBoc())
         } catch (error) {
             throw new Error(`Error while sending an external message.\nReason: ${error}`)
         }
@@ -101,11 +107,11 @@ export class BlockchainService {
         return int_msg
     }
 
-    private packActions(batch: Message[], queryId: number) {
+    private packActions(batch: PaidRequestDto[], queryId: number) {
         let out_actions: OutAction[]
 
         if (this.configService.get('ASSET') === 'TON') {
-            out_actions = batch.map(({ message }) => ({
+            out_actions = batch.map(message => ({
                 type: 'sendMsg',
                 mode: SendMode.PAY_GAS_SEPARATELY,
                 outMsg: internal({
@@ -115,7 +121,7 @@ export class BlockchainService {
                 })
             }))
         } else {
-            out_actions = batch.map(({ message }) => ({
+            out_actions = batch.map(message => ({
                 type: 'sendMsg',
                 mode: SendMode.PAY_GAS_SEPARATELY,
                 outMsg: internal({

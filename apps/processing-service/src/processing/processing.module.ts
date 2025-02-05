@@ -1,6 +1,5 @@
 import { Module } from "@nestjs/common"
-import { ProcessingController } from "./processing.controller"
-//import { ProcessingService } from "./processing.service"
+import { ProcessingService } from "./processing.service"
 import { DatabaseModule } from "@db"
 import { BlockchainModule } from "../blockchain/blockchain.module"
 import { BullModule } from "@nestjs/bullmq"
@@ -20,11 +19,11 @@ import { registerBullQueue } from "../config/bull.queue"
     BullModule.registerQueueAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
+      name: 'validate-queue',
       useFactory: registerBullQueue
     })
   ],
-  controllers: [ProcessingController],
-  //providers: [ProcessingService],
+  providers: [ProcessingService],
 })
 
 export class ProcessingModule { }
