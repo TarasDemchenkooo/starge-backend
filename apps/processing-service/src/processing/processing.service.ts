@@ -7,11 +7,12 @@ import { BlockchainService } from "../blockchain/blockchain.service"
 import { InjectQueue } from "@nestjs/bullmq"
 import { Queue } from "bullmq"
 import { DatabaseService } from "@db"
-import { findMissing } from "./utils/findMissing"
+import { nextQueryId } from "./utils/nextQueryId"
 
 @Injectable()
 export class ProcessingService implements OnModuleInit {
     private readonly asset: string
+    private readonly walletAddress: string
     private readonly kafka: Kafka
     private readonly consumer: Consumer
     private queryId: number
@@ -23,6 +24,7 @@ export class ProcessingService implements OnModuleInit {
         private readonly db: DatabaseService
     ) {
         this.asset = this.configService.get('ASSET').toLowerCase()
+        this.walletAddress = this.configService.get('WALLET_ADDRESS')
 
         this.kafka = new Kafka({
             clientId: `${this.asset}-processor`,
@@ -33,8 +35,12 @@ export class ProcessingService implements OnModuleInit {
     }
 
     async onModuleInit() {
-        const wallet = await this.db.wallet.findUnique({where: {address: ''}})
-        this.queryId = findMissing(wallet.usedQueries.map(query => query.queryId))
+        this.queryId = nextQueryId((
+            await this.db.wallet.findUnique({
+                where: { address: this.walletAddress },
+                include: { usedQueries: true }
+            })
+        ).usedQueries)
 
         await this.consumer.connect()
         await this.consumer.subscribe({ topic: `${this.asset}-requests` })
@@ -46,6 +52,13 @@ export class ProcessingService implements OnModuleInit {
                 )
 
                 const ext_hash = await this.blockchainService.sendBatch(batchToSend, this.queryId)
+
+                const updatedWallet = await this.db.wallet.update({
+                    where: { address: this.walletAddress },
+                    data: { usedQueries: { create: { queryId: this.queryId } } },
+                    include: { usedQueries: true }
+                })
+                this.queryId = nextQueryId(updatedWallet.usedQueries)
 
                 await this.bullQueue.add('validate-trace', {
                     hash: ext_hash,
