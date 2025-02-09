@@ -7,9 +7,9 @@ export class TonAddressValidator implements ValidatorConstraintInterface {
         try {
             Address.parse(address)
 
-            if (address[0] === 'k' || address[0] === '0') {
-                throw new Error('Testnet addresses is not supported')
-            }
+            //if (address[0] === 'k' || address[0] === '0') {
+            //    throw new Error('Testnet addresses is not supported')
+            //}
 
             return true
         } catch {

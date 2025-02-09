@@ -58,6 +58,7 @@ enum TransactionStatus {
 model Wallet {
   id          String       @id @default(uuid())
   address     String       @unique
+  asset       Symbol
   status      WalletStatus @default(ACTIVE)
   usedQueries Query[]
 

@@ -22,9 +22,10 @@ export class BlockchainService {
         })
 
         this.walletMetadata = {
+            asset: this.configService.get('ASSET'),
             address: this.configService.get('WALLET_ADDRESS'),
             jettonAddress: this.configService.get('JETTON_WALLET_ADDRESS'),
-            secretKey: Buffer.from(this.configService.get('WALLET_SECRET_KEY')),
+            secretKey: Buffer.from(this.configService.get('WALLET_SECRET_KEY') as string, 'hex'),
             subwalletId: Number(this.configService.get('WALLET_ID')),
             timeout: Number(this.configService.get('WALLET_TIMEOUT'))
         }
@@ -99,7 +100,7 @@ export class BlockchainService {
         const int_msg = beginCell()
             .storeUint(0x10, 6)
             .storeAddress(Address.parse(internal.address))
-            .storeCoins(toNano(1))
+            .storeCoins(toNano(this.walletMetadata.asset === 'TON' ? 0.2 : 1))
             .storeUint(0, 107)
             .storeSlice(int_msg_body.asSlice())
             .endCell()
@@ -110,7 +111,7 @@ export class BlockchainService {
     private packActions(batch: PaidRequestDto[], queryId: number) {
         let out_actions: OutAction[]
 
-        if (this.configService.get('ASSET') === 'TON') {
+        if (this.walletMetadata.asset === 'TON') {
             out_actions = batch.map(message => ({
                 type: 'sendMsg',
                 mode: SendMode.PAY_GAS_SEPARATELY,

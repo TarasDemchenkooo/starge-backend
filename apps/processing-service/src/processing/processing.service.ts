@@ -1,13 +1,14 @@
 import { Injectable, OnModuleInit } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import { Consumer, Kafka } from "kafkajs"
-import { buildConsumerConfig } from "../config/consumer.config"
+import { buildConsumerConfig } from "../config/kafka/consumer.config"
 import { PaidRequestDto } from "@shared"
 import { BlockchainService } from "../blockchain/blockchain.service"
 import { InjectQueue } from "@nestjs/bullmq"
 import { Queue } from "bullmq"
 import { DatabaseService } from "@db"
 import { nextQueryId } from "./utils/nextQueryId"
+import { JobData } from "../validating/types/job"
 
 @Injectable()
 export class ProcessingService implements OnModuleInit {
@@ -19,9 +20,9 @@ export class ProcessingService implements OnModuleInit {
 
     constructor(
         private readonly configService: ConfigService,
+        private readonly db: DatabaseService,
         private readonly blockchainService: BlockchainService,
-        @InjectQueue('validate-queue') private readonly bullQueue: Queue,
-        private readonly db: DatabaseService
+        @InjectQueue('validate-queue') private readonly bullQueue: Queue<JobData>,
     ) {
         this.asset = this.configService.get('ASSET').toLowerCase()
         this.walletAddress = this.configService.get('WALLET_ADDRESS')
@@ -51,19 +52,20 @@ export class ProcessingService implements OnModuleInit {
                     message => JSON.parse(message.value.toString())
                 )
 
-                const ext_hash = await this.blockchainService.sendBatch(batchToSend, this.queryId)
+                try {
+                    const ext_hash = await this.blockchainService.sendBatch(batchToSend, this.queryId)
 
-                const updatedWallet = await this.db.wallet.update({
-                    where: { address: this.walletAddress },
-                    data: { usedQueries: { create: { queryId: this.queryId } } },
-                    include: { usedQueries: true }
-                })
-                this.queryId = nextQueryId(updatedWallet.usedQueries)
+                    const updatedWallet = await this.db.wallet.update({
+                        where: { address: this.walletAddress },
+                        data: { usedQueries: { create: { queryId: this.queryId } } },
+                        include: { usedQueries: true }
+                    })
+                    this.queryId = nextQueryId(updatedWallet.usedQueries)
 
-                await this.bullQueue.add('validate-trace', {
-                    hash: ext_hash,
-                    batch: batchToSend
-                })
+                    await this.bullQueue.add('validate-trace', { hash: ext_hash, batch: batchToSend })
+                } catch (error) {
+                    // TODO: alerting on error
+                }
             }
         })
     }

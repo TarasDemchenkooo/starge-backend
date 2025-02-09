@@ -6,5 +6,8 @@ export const buildConsumerConfig = (configService: ConfigService): ConsumerConfi
     allowAutoTopicCreation: false,
     minBytes: Number(configService.get('MIN_BATCH_SIZE')),
     maxBytes: Number(configService.get('MAX_BATCH_SIZE')),
-    maxWaitTimeInMs: Number(configService.get('REQUEST_TIMEOUT'))
+    maxWaitTimeInMs: Number(configService.get('REQUEST_TIMEOUT')),
+    retry: {
+        retries: 0
+    }
 })

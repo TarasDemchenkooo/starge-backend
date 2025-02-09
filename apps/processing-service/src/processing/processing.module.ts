@@ -4,18 +4,12 @@ import { DatabaseModule } from "@db"
 import { BlockchainModule } from "../blockchain/blockchain.module"
 import { BullModule } from "@nestjs/bullmq"
 import { ConfigModule, ConfigService } from "@nestjs/config"
-import { buildBullConfig } from "../config/bull.config"
-import { registerBullQueue } from "../config/bull.queue"
+import { registerBullQueue } from "../config/bull/bullQueue.config"
 
 @Module({
   imports: [
     DatabaseModule,
     BlockchainModule,
-    BullModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: buildBullConfig
-    }),
     BullModule.registerQueueAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
