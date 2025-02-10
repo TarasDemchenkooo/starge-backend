@@ -2,11 +2,11 @@ import { ConfigService } from "@nestjs/config"
 import { TelegrafModuleOptions } from "nestjs-telegraf"
 
 export const buildBotConfig = (configService: ConfigService): TelegrafModuleOptions => ({
-    token: configService.get('BOT_TOKEN'),
+    token: configService.get<string>('BOT_TOKEN'),
     launchOptions: {
         webhook: {
-            domain: configService.get('HOST'),
-            path: configService.get('WEBHOOK_PATH')
+            domain: configService.get<string>('BOT_HOST'),
+            path: configService.get<string>('BOT_PATH')
         }
     }
 })

@@ -6,7 +6,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule)
 
   const bot = app.get(getBotToken())
-  app.use(bot.webhookCallback(process.env.WEBHOOK_PATH))
+  app.use(bot.webhookCallback(process.env.BOT_PATH))
 
   await app.listen(process.env.PORT)
 }

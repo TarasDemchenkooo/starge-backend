@@ -7,7 +7,7 @@ export const buildProducerConfig = (configService: ConfigService): ClientProvide
         postfixId: '',
         client: {
             clientId: 'requests-emitter',
-            brokers: configService.get('BROKERS').split(';')
+            brokers: configService.get<string>('BROKERS').split(';')
         },
         producerOnlyMode: true,
         producer: {

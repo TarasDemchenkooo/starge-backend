@@ -5,13 +5,11 @@ import { BlockchainModule } from './blockchain/blockchain.module'
 import { ValidatingModule } from './validating/validating.module'
 import { BullModule } from '@nestjs/bullmq'
 import { buildBullConfig } from './config/bull/bull.config'
-import configuration from './config/app/configuration'
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      load: [configuration],
-      ignoreEnvFile: true,
+      envFilePath: `${process.cwd()}/apps/processing-service/.env`,
       isGlobal: true
     }),
     BullModule.forRootAsync({

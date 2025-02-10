@@ -1,25 +1,27 @@
 import { Processor, WorkerHost } from "@nestjs/bullmq"
 import axios from "axios"
-import { DelayedError, Job, UnrecoverableError } from "bullmq"
+import { Job, UnrecoverableError } from "bullmq"
 import dotenv from 'dotenv'
 import { JobData } from "./types/job"
 import { Trace } from "./types/trace"
 import { ClientKafka } from "@nestjs/microservices"
 import { Inject } from "@nestjs/common"
 import { delayJob } from "./utils/delay"
+import { ConfigService } from "@nestjs/config"
 
-const { ASSET, TONAPI_URL, TONAPI_KEY } =
-    dotenv.config({ path: `${process.cwd()}/apps/processing-service/.env` }).parsed
+dotenv.config({ path: `${process.cwd()}/apps/processing-service/.env` })
 
-Processor(`${ASSET}-batches`, { concurrency: 5 })
+Processor(`${process.env.ASSET.toLowerCase()}-batches`, { concurrency: 5 })
 export class ValidatingService extends WorkerHost {
-    constructor(@Inject('BATCHES_EMITTER') private readonly batchesEmitter: ClientKafka) {
-        super()
-    }
+    constructor(
+        @Inject('BATCHES_EMITTER') private readonly batchesEmitter: ClientKafka,
+        private readonly configService: ConfigService
+    ) { super() }
 
-    async process(job: Job<JobData>, token: string) {
-        const { data: trace, status } = await axios.get<Trace>(`${TONAPI_URL}/traces/${job.data.hash}`, {
-            headers: { Authorization: `Bearer ${TONAPI_KEY}` },
+    async process(job: Job<JobData>) {
+        const { data: trace, status } = await axios.get<Trace>(
+            `${this.configService.get('TONAPI_URL')}/traces/${job.data.hash}`, {
+            headers: { Authorization: `Bearer ${this.configService.get('TONAPI_KEY')}` },
             validateStatus: status => status === 200 || status === 404,
         })
 
@@ -39,7 +41,7 @@ export class ValidatingService extends WorkerHost {
             throw new UnrecoverableError('Internal transfer was not successful')
         }
 
-        if (ASSET !== 'TON') {
+        if (process.env.ASSET !== 'TON') {
             if (trace.children[0].children?.length !== job.data.batch.length) {
                 await delayJob(job, 5, 'Trace is loading for transactions on self jetton wallet')
             }

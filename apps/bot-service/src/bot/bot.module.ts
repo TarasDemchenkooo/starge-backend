@@ -5,8 +5,8 @@ import { TelegrafModule } from "nestjs-telegraf"
 import { ConfigModule, ConfigService } from "@nestjs/config"
 import { ClientsModule } from "@nestjs/microservices"
 import { DatabaseModule } from "@db"
-import { buildBotConfig } from "../config/bot.config"
-import { buildProducerConfig } from "../config/producer.config"
+import { buildBotConfig } from "../config/bot/bot.config"
+import { buildProducerConfig } from "../config/kafka/producer.config"
 
 @Module({
     imports: [
