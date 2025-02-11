@@ -8,9 +8,7 @@
   "scripts": {
     "build": "nest build",
     "start": "nest start",
-    "api:dev": "nest start api --watch",
-    "bot:dev": "nest start bot-service --watch",
-    "processing:dev": "nest start processing-service --watch"
+    "start:dev": "nest start --watch"
   },
   "dependencies": {
     "@nestjs/bullmq": "^11.0.1",

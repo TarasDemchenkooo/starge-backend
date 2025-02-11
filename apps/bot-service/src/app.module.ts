@@ -4,10 +4,7 @@ import { ConfigModule } from '@nestjs/config'
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      envFilePath: `${process.cwd()}/apps/bot-service/.env`,
-      isGlobal: true
-    }),
+    ConfigModule.forRoot({ isGlobal: true }),
     BotModule
   ]
 })

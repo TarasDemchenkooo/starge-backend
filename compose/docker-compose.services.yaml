@@ -1,0 +1,42 @@
+name: starge-services
+
+services:
+  api-gateway:
+    container_name: api-gateway
+    build:
+      context: ..
+      dockerfile: ./apps/api/Dockerfile
+    ports:
+      - 5172:5172
+    volumes:
+      - ..:/app
+      - /app/node_modules
+    env_file:
+      - ../apps/api/.env
+    command: sh -c "npx prisma generate && npm run start:dev api"
+
+  payment-service:
+    container_name: payment-service
+    build:
+      context: ..
+      dockerfile: ./apps/bot-service/Dockerfile
+    ports:
+      - 5171:5171
+    volumes:
+      - ..:/app
+      - /app/node_modules
+    env_file:
+      - ../apps/bot-service/.env
+    command: sh -c "npx prisma generate && npm run start:dev bot-service"
+    
+  ton-processor:
+    container_name: ton-processor
+    build:
+      context: ..
+      dockerfile: ./apps/processing-service/Dockerfile
+    volumes:
+      - ..:/app
+      - /app/node_modules
+    env_file:
+      - ../apps/processing-service/ton.env
+    command: sh -c "npx prisma generate && npm run start:dev processing-service"

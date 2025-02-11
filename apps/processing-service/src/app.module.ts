@@ -8,10 +8,7 @@ import { buildBullConfig } from './config/bull/bull.config'
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      envFilePath: `${process.cwd()}/apps/processing-service/.env`,
-      isGlobal: true
-    }),
+    ConfigModule.forRoot({ isGlobal: true }),
     BullModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

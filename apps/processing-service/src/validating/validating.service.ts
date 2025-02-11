@@ -1,15 +1,12 @@
 import { Processor, WorkerHost } from "@nestjs/bullmq"
 import axios from "axios"
 import { Job, UnrecoverableError } from "bullmq"
-import dotenv from 'dotenv'
 import { JobData } from "./types/job"
 import { Trace } from "./types/trace"
 import { ClientKafka } from "@nestjs/microservices"
 import { Inject } from "@nestjs/common"
 import { delayJob } from "./utils/delay"
 import { ConfigService } from "@nestjs/config"
-
-dotenv.config({ path: `${process.cwd()}/apps/processing-service/.env` })
 
 Processor(`${process.env.ASSET.toLowerCase()}-batches`, { concurrency: 5 })
 export class ValidatingService extends WorkerHost {

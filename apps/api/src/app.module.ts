@@ -5,10 +5,7 @@ import { ConfigModule } from '@nestjs/config'
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      envFilePath: `${process.cwd()}/apps/api/.env`,
-      isGlobal: true
-    }),
+    ConfigModule.forRoot({ isGlobal: true }),
     AuthModule,
     UserModule
   ],
