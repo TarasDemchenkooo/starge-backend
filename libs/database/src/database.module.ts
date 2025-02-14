@@ -3,11 +3,7 @@ import { DatabaseService } from './database.service'
 import { ConfigModule } from '@nestjs/config'
 
 @Module({
-  imports: [
-    ConfigModule.forRoot({
-      envFilePath: `${process.cwd()}/prisma/.env`
-    })
-  ],
+  imports: [ConfigModule.forRoot()],
   providers: [DatabaseService],
   exports: [DatabaseService],
 })

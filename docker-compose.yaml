@@ -1,0 +1,84 @@
+name: starge
+
+services:
+  api-gateway:
+    container_name: api-gateway
+    build:
+      target: development
+    ports:
+      - 5172:5172
+    volumes:
+      - ./apps/api/src:/app/apps/api/src
+    env_file:
+      - ./apps/api/.env
+      - ./prisma/.env
+    command: npm run dev api
+
+  payment-service:
+    container_name: payment-service
+    build:
+      target: development
+    ports:
+      - 5171:5171
+    volumes:
+      - ./apps/bot-service/src:/app/apps/bot-service/src
+    env_file:
+      - ./apps/bot-service/.env
+      - ./prisma/.env
+    depends_on:
+      - kafka
+    command: npm run dev bot-service
+
+  ton-processor:
+    container_name: ton-processor
+    build:
+      target: development
+    volumes:
+      - ./apps/processing-service/src:/app/apps/processing-service/src
+    env_file:
+      - ./apps/processing-service/ton.env
+      - ./prisma/.env
+    depends_on:
+      - kafka
+      - redis
+    command: npm run dev processing-service
+
+  redis:
+    image: redis/redis-stack:latest
+    container_name: redis-stack
+    ports:
+      - 6379:6379
+      - 8091:8001
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    ports:
+      - 2181:2181
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      - zookeeper
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui
+    container_name: kafka-ui
+    ports:
+      - 8090:8080
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=starge-cluster
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:29092
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+    depends_on:
+      - kafka
