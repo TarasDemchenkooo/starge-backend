@@ -83,10 +83,10 @@ services:
             KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
         healthcheck:
             test: ["CMD", "kafka-consumer-groups", "--bootstrap-server", "kafka:29092", "--list"]
-            interval: 10s
-            timeout: 5s
+            interval: 15s
+            timeout: 10s
             retries: 10
-            start_period: 30s
+            start_period: 60s
         depends_on:
             - zookeeper
 

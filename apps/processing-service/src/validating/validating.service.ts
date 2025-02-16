@@ -8,7 +8,7 @@ import { Inject } from "@nestjs/common"
 import { delayJob } from "./utils/delay"
 import { ConfigService } from "@nestjs/config"
 
-Processor(`${process.env.ASSET.toLowerCase()}-batches`, { concurrency: 5 })
+@Processor(`${process.env.ASSET.toLowerCase()}-batches`, { concurrency: 5 })
 export class ValidatingService extends WorkerHost {
     constructor(
         @Inject('BATCHES_EMITTER') private readonly batchesEmitter: ClientKafka,

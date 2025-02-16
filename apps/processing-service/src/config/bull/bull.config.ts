@@ -8,12 +8,12 @@ export const buildBullConfig = (configService: ConfigService): BullRootModuleOpt
     },
     defaultJobOptions: {
         attempts: 3,
-        delay: 15000,
+        delay: configService.get('VALIDATING_DELAY'),
         backoff: {
             type: 'exponential',
             delay: 2000
         },
-        removeOnComplete: true,
+        removeOnComplete: 1000,
         removeOnFail: 1000
     }
 })

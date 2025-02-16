@@ -64,7 +64,7 @@ export class ProcessingService implements OnModuleInit {
 
                     await this.bullQueue.add('validate-trace', { hash: ext_hash, batch: batchToSend })
                 } catch (error) {
-                    // TODO: alerting on error
+                    console.log(error)
                 }
             }
         })
