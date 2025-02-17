@@ -83,6 +83,7 @@ export class BotService {
         })
 
         this.requestsEmitter.emit<string, PaidRequestDto>(`${route.toLowerCase()}-requests`, {
+            userId,
             address,
             amount: target,
             chargeId

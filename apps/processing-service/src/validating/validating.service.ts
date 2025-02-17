@@ -7,6 +7,7 @@ import { ClientKafka } from "@nestjs/microservices"
 import { Inject } from "@nestjs/common"
 import { delayJob } from "./utils/delay"
 import { ConfigService } from "@nestjs/config"
+import { ResolvedBatchDto } from "@shared"
 
 @Processor(`${process.env.ASSET.toLowerCase()}-batches`, { concurrency: 5 })
 export class ValidatingService extends WorkerHost {
@@ -50,7 +51,7 @@ export class ValidatingService extends WorkerHost {
             }
         }
 
-        this.batchesEmitter.emit<string, JobData>('notifications', {
+        this.batchesEmitter.emit<string, ResolvedBatchDto>('resolved-batches', {
             hash: trace.transaction.hash,
             batch: job.data.batch
         })
