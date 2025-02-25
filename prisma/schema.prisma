@@ -46,10 +46,11 @@ model Settings {
 }
 
 model Outbox {
-  id        String   @id @default(uuid())
-  payload   Json
-  locked    Boolean  @default(false)
-  createdAt DateTime @default(now()) @map("created_at")
+  id          String   @id @default(uuid())
+  payload     Json
+  tokenSymbol Symbol   @map("token_symbol")
+  locked      Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at")
 
   @@map("outbox")
 }

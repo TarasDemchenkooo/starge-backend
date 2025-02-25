@@ -24,10 +24,7 @@
       ],
       "@shared": [
         "libs/shared/src"
-      ],
-      "@redis": [
-        "libs/redis/src"
-      ],
+      ]
     }
   },
   "watchOptions": {

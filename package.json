@@ -87,8 +87,7 @@
     ],
     "moduleNameMapper": {
       "^db/database(|/.*)$": "<rootDir>/libs/database/src/$1",
-      "^shared/shared(|/.*)$": "<rootDir>/libs/shared/src/$1",
-      "^redis/redis(|/.*)$": "<rootDir>/libs/redis/src/$1"
+      "^shared/shared(|/.*)$": "<rootDir>/libs/shared/src/$1"
     }
   }
 }

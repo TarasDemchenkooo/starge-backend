@@ -1,22 +1,22 @@
 {
   "$schema": "https://json.schemastore.org/nest-cli",
   "collection": "@nestjs/schematics",
-  "sourceRoot": "apps/api/src",
+  "sourceRoot": "apps/api-gateway/src",
   "compilerOptions": {
     "deleteOutDir": true,
     "webpack": true,
-    "tsConfigPath": "apps/api/tsconfig.app.json"
+    "tsConfigPath": "apps/api-gateway/tsconfig.app.json"
   },
   "monorepo": true,
-  "root": "apps/api",
+  "root": "apps/api-gateway",
   "projects": {
-    "api": {
+    "api-gateway": {
       "type": "application",
-      "root": "apps/api",
+      "root": "apps/api-gateway",
       "entryFile": "main",
-      "sourceRoot": "apps/api/src",
+      "sourceRoot": "apps/api-gateway/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/api/tsconfig.app.json"
+        "tsConfigPath": "apps/api-gateway/tsconfig.app.json"
       }
     },
     "processing-service": {
@@ -28,13 +28,13 @@
         "tsConfigPath": "apps/processing-service/tsconfig.app.json"
       }
     },
-    "bot-service": {
+    "payment-service": {
       "type": "application",
-      "root": "apps/bot-service",
+      "root": "apps/payment-service",
       "entryFile": "main",
-      "sourceRoot": "apps/bot-service/src",
+      "sourceRoot": "apps/payment-service/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/bot-service/tsconfig.app.json"
+        "tsConfigPath": "apps/payment-service/tsconfig.app.json"
       }
     },
     "database": {
@@ -64,13 +64,13 @@
         "tsConfigPath": "apps/notification-service/tsconfig.app.json"
       }
     },
-    "redis": {
-      "type": "library",
-      "root": "libs/redis",
-      "entryFile": "index",
-      "sourceRoot": "libs/redis/src",
+    "tx-aggregator": {
+      "type": "application",
+      "root": "apps/tx-aggregator",
+      "entryFile": "main",
+      "sourceRoot": "apps/tx-aggregator/src",
       "compilerOptions": {
-        "tsConfigPath": "libs/redis/tsconfig.lib.json"
+        "tsConfigPath": "apps/tx-aggregator/tsconfig.app.json"
       }
     }
   }
