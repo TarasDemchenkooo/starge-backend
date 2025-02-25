@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "linux-musl"]
 }
 
@@ -45,6 +45,15 @@ model Settings {
   @@map("settings")
 }
 
+model Outbox {
+  id        String   @id @default(uuid())
+  payload   Json
+  locked    Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("outbox")
+}
+
 enum Symbol {
   TON
   USDT
@@ -54,30 +63,4 @@ enum TransactionStatus {
   PENDING
   CONFIRMED
   FAILED
-}
-
-model Wallet {
-  id          String       @id @default(uuid())
-  address     String       @unique
-  asset       Symbol
-  status      WalletStatus @default(ACTIVE)
-  usedQueries Query[]
-
-  @@map("wallets")
-}
-
-model Query {
-  id        String   @id @default(uuid())
-  wallet    Wallet   @relation(fields: [walletId], references: [id])
-  walletId  String   @map("wallet_id")
-  queryId   Int      @map("query_id")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("queries")
-}
-
-enum WalletStatus {
-  ACTIVE
-  PAUSED
-  DISABLED
 }

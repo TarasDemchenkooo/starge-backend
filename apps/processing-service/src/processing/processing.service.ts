@@ -6,8 +6,6 @@ import { PaidRequestDto } from "@shared"
 import { BlockchainService } from "../blockchain/blockchain.service"
 import { InjectQueue } from "@nestjs/bullmq"
 import { Queue } from "bullmq"
-import { DatabaseService } from "@db"
-import { nextQueryId } from "./utils/nextQueryId"
 import { JobData } from "../validating/types/job"
 
 @Injectable()
@@ -20,7 +18,6 @@ export class ProcessingService implements OnModuleInit {
 
     constructor(
         private readonly configService: ConfigService,
-        private readonly db: DatabaseService,
         private readonly blockchainService: BlockchainService,
         @InjectQueue('validate-queue') private readonly bullQueue: Queue<JobData>,
     ) {
@@ -36,13 +33,6 @@ export class ProcessingService implements OnModuleInit {
     }
 
     async onModuleInit() {
-        this.queryId = nextQueryId((
-            await this.db.wallet.findUnique({
-                where: { address: this.walletAddress },
-                include: { usedQueries: true }
-            })
-        ).usedQueries)
-
         await this.consumer.connect()
         await this.consumer.subscribe({ topic: `${this.asset}-requests` })
 
@@ -54,14 +44,6 @@ export class ProcessingService implements OnModuleInit {
 
                 try {
                     const ext_hash = await this.blockchainService.sendBatch(batchToSend, this.queryId)
-
-                    const updatedWallet = await this.db.wallet.update({
-                        where: { address: this.walletAddress },
-                        data: { usedQueries: { create: { queryId: this.queryId } } },
-                        include: { usedQueries: true }
-                    })
-                    this.queryId = nextQueryId(updatedWallet.usedQueries)
-
                     await this.bullQueue.add('validate-trace', { hash: ext_hash, batch: batchToSend })
                 } catch (error) {
                     console.log(error)
