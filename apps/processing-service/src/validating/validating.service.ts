@@ -1,18 +1,17 @@
 import { Processor, WorkerHost } from "@nestjs/bullmq"
 import axios from "axios"
 import { Job, UnrecoverableError } from "bullmq"
-import { JobData } from "./types/job"
 import { Trace } from "./types/trace"
 import { ClientKafka } from "@nestjs/microservices"
 import { Inject } from "@nestjs/common"
 import { delayJob } from "./utils/delay"
 import { ConfigService } from "@nestjs/config"
-import { ResolvedBatchDto } from "@shared"
+import { JobData } from "@shared"
 
 @Processor(`${process.env.ASSET.toLowerCase()}-batches`, { concurrency: 5 })
 export class ValidatingService extends WorkerHost {
     constructor(
-        @Inject('BATCHES_EMITTER') private readonly batchesEmitter: ClientKafka,
+        @Inject('BATCHES_VALIDATOR') private readonly batchesValidator: ClientKafka,
         private readonly configService: ConfigService
     ) { super() }
 
@@ -39,7 +38,7 @@ export class ValidatingService extends WorkerHost {
             throw new UnrecoverableError('Internal transfer was not successful')
         }
 
-        if (process.env.ASSET !== 'TON') {
+        if (this.configService.get('ASSET') !== 'TON') {
             if (trace.children[0].children?.length !== job.data.batch.length) {
                 await delayJob(job, 5, 'Trace is loading for transactions on self jetton wallet')
             }
@@ -51,7 +50,7 @@ export class ValidatingService extends WorkerHost {
             }
         }
 
-        this.batchesEmitter.emit<string, ResolvedBatchDto>('resolved-batches', {
+        this.batchesValidator.emit<string, JobData>('resolved-batches', {
             hash: trace.transaction.hash,
             batch: job.data.batch
         })

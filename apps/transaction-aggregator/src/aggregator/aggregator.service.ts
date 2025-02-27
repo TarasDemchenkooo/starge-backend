@@ -61,12 +61,18 @@ export class AggregatorService implements OnModuleInit, OnModuleDestroy {
         const batches = []
 
         for (let i = 0; i < txs.length; i += this.batchSize) {
-            batches.push(cleanTxs.slice(i, i + this.batchSize))
+            const batch = cleanTxs.slice(i, i + this.batchSize)
+
+            if (batch.length < Math.ceil(0.4 * this.batchSize) && i !== 0) {
+                batches[batches.length - 1].push(...batch)
+            } else {
+                batches.push(batch)
+            }
         }
 
         const queryIds = await this.redis.eval(
             luaScript, 0,
-            this.asset, batches.length, this.env.get('WALLET_TIMEOUT')
+            this.asset, batches.length, 2 * Number(this.env.get('WALLET_TIMEOUT'))
         )
 
         const messages = batches.map((batch, ind) => ({

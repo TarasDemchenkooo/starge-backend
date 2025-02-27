@@ -7,7 +7,7 @@ import { buildProducerConfig } from "../config/kafka/producer.config"
 @Module({
     imports: [
         ClientsModule.registerAsync([{
-            name: 'BATCHES_EMITTER',
+            name: 'BATCHES_VALIDATOR',
             imports: [ConfigModule],
             inject: [ConfigService],
             useFactory: buildProducerConfig

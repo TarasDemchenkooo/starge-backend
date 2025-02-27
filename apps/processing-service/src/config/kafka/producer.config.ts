@@ -6,16 +6,15 @@ export const buildProducerConfig = (configService: ConfigService): ClientProvide
     options: {
         postfixId: '',
         client: {
-            clientId: 'batches-emitter',
+            clientId: `${configService.get('ASSET').toLowerCase()}-batches-validator`,
             brokers: configService.get('BROKERS').split(';')
         },
         producerOnlyMode: true,
         producer: {
             allowAutoTopicCreation: false,
-            idempotent: true
         },
         send: {
-            acks: -1
+            acks: 1
         }
     },
 })

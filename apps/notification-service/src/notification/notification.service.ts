@@ -1,12 +1,12 @@
 import { DatabaseService } from "@db"
 import { Injectable } from "@nestjs/common"
-import { ResolvedBatchDto } from "@shared"
+import { JobData } from "@shared"
 
 @Injectable()
 export class NotificationService {
     constructor(private readonly db: DatabaseService) { }
 
-    async notify({ hash, batch }: ResolvedBatchDto) {
+    async notify({ hash, batch }: JobData) {
         const chargeIds = batch.map(request => request.chargeId)
         const users = batch.map(request => request.userId)
 

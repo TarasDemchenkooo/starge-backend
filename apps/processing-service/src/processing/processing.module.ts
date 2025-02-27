@@ -4,6 +4,7 @@ import { BlockchainModule } from "../blockchain/blockchain.module"
 import { BullModule } from "@nestjs/bullmq"
 import { ConfigModule, ConfigService } from "@nestjs/config"
 import { registerBullQueue } from "../config/bull/bullQueue.config"
+import { ProcessingController } from "./processing.controller"
 
 @Module({
     imports: [
@@ -15,6 +16,7 @@ import { registerBullQueue } from "../config/bull/bullQueue.config"
             useFactory: registerBullQueue
         })
     ],
+    controllers: [ProcessingController],
     providers: [ProcessingService],
 })
 

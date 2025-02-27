@@ -1,11 +1,16 @@
-import { ConfigService } from "@nestjs/config"
-import { ConsumerConfig } from "kafkajs"
+import { KafkaOptions, Transport } from "@nestjs/microservices"
 
-export const buildConsumerConfig = (configService: ConfigService): ConsumerConfig => ({
-    groupId: `${configService.get('ASSET').toLowerCase()}-processors`,
-    allowAutoTopicCreation: false,
-    minBytes: Number(configService.get('MIN_BATCH_SIZE')),
-    maxBytes: Number(configService.get('MAX_BATCH_SIZE')),
-    maxWaitTimeInMs: Number(configService.get('REQUEST_TIMEOUT')),
-    retry: { retries: 0 }
-})
+export const ConsumerConfig: KafkaOptions = {
+    transport: Transport.KAFKA,
+    options: {
+        postfixId: '',
+        client: {
+            clientId: `${process.env.ASSET.toLowerCase()}-processor`,
+            brokers: process.env.BROKERS.split(';')
+        },
+        consumer: {
+            groupId: `${process.env.ASSET.toLowerCase()}-processing-group`,
+            allowAutoTopicCreation: false
+        }
+    }
+}

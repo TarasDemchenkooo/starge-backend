@@ -64,13 +64,13 @@
         "tsConfigPath": "apps/notification-service/tsconfig.app.json"
       }
     },
-    "tx-aggregator": {
+    "transaction-aggregator": {
       "type": "application",
-      "root": "apps/tx-aggregator",
+      "root": "apps/transaction-aggregator",
       "entryFile": "main",
-      "sourceRoot": "apps/tx-aggregator/src",
+      "sourceRoot": "apps/transaction-aggregator/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/tx-aggregator/tsconfig.app.json"
+        "tsConfigPath": "apps/transaction-aggregator/tsconfig.app.json"
       }
     }
   }

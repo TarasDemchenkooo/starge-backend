@@ -9,9 +9,8 @@ export const ConsumerConfig: KafkaOptions = {
             brokers: process.env.BROKERS.split(';')
         },
         consumer: {
-            groupId: 'notification-service',
-            allowAutoTopicCreation: false,
-            retry: { retries: 3 }
+            groupId: 'notification-service-group',
+            allowAutoTopicCreation: false
         }
     }
 }
