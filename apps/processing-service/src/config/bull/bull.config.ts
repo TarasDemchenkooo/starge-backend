@@ -13,7 +13,9 @@ export const buildBullConfig = (configService: ConfigService): BullRootModuleOpt
             type: 'exponential',
             delay: 2000
         },
-        removeOnComplete: 1000,
+        removeOnComplete: {
+            age: Number(configService.get('WALLET_TIMEOUT'))
+        },
         removeOnFail: 1000
     }
 })

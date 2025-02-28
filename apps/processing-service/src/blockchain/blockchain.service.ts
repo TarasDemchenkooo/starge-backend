@@ -6,7 +6,8 @@ import { InternalMessage } from "./types/internal"
 import { TonClient } from "@ton/ton"
 import { WalletMetadata } from "./types/metadata"
 import { ConfigService } from "@nestjs/config"
-import { PaidRequestDto } from "@shared"
+import { Batch } from "../processing/types/batch"
+import { KafkaRetriableException } from "@nestjs/microservices"
 
 @Injectable()
 export class BlockchainService {
@@ -31,7 +32,7 @@ export class BlockchainService {
         }
     }
 
-    async sendBatch(batch: PaidRequestDto[], queryId: number): Promise<string> {
+    async sendBatch({ queryId, batch }: Batch): Promise<string> {
         const outActions = this.packActions(batch, queryId)
 
         const internalMessage = this.buildInternal({
@@ -53,7 +54,9 @@ export class BlockchainService {
         try {
             await this.client.sendFile(externalMessage.toBoc())
         } catch (error) {
-            throw new Error(`Error while sending an external message.\nReason: ${error}`)
+            if (!error?.response?.data?.error?.includes('External message was not accepted')) {
+                throw new KafkaRetriableException('')
+            }
         }
 
         return externalMessage.hash().toString('hex')
@@ -108,7 +111,7 @@ export class BlockchainService {
         return int_msg
     }
 
-    private packActions(batch: PaidRequestDto[], queryId: number) {
+    private packActions(batch: Batch['batch'], queryId: number) {
         let out_actions: OutAction[]
 
         if (this.walletMetadata.asset === 'TON') {

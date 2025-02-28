@@ -4,16 +4,27 @@ import { InjectQueue } from "@nestjs/bullmq"
 import { Queue } from "bullmq"
 import { Batch } from "./types/batch"
 import { JobData } from "@shared"
+import { ConfigService } from "@nestjs/config"
 
 @Injectable()
 export class ProcessingService {
     constructor(
+        private readonly env: ConfigService,
         private readonly blockchainService: BlockchainService,
         @InjectQueue('validate-queue') private readonly bullQueue: Queue<JobData>,
     ) { }
 
-    async sendBatch({ batch, queryId }: Batch) {
-        const ext_hash = await this.blockchainService.sendBatch(batch, queryId)
-        await this.bullQueue.add('validate-trace', { hash: ext_hash, batch })
+    async sendBatch(batch: Batch) {
+        const ext_hash = await this.blockchainService.sendBatch(batch)
+
+        await this.bullQueue.add('validate-trace', {
+            hash: ext_hash,
+            batch: batch.batch
+        }, {
+            deduplication: {
+                id: String(batch.queryId),
+                ttl: Number(this.env.get('WALLET_TIMEOUT')) * 1000
+            }
+        })
     }
 }
