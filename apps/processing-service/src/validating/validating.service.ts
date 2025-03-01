@@ -47,33 +47,28 @@ export class ValidatingService extends WorkerHost implements OnModuleInit, OnMod
             validateStatus: status => status === 200 || status === 404,
         })
 
-        let resolved = false
         let resolvedBatch = job.data.batch
 
         try {
             if (status === 404) throw new DelayedError(PHASE_1_DELAY)
 
             if (trace.transaction.action_phase.skipped_actions === 1) {
-                resolved = true
                 throw new UnrecoverableError(PHASE_1_ERROR)
             }
 
             if (!trace.children) throw new DelayedError(PHASE_2_DELAY)
 
             if (!trace.children[0].transaction.success) {
-                resolved = true
                 throw new UnrecoverableError(PHASE_2_ERROR)
             }
 
             if (this.env.get('ASSET') === 'TON') {
-                resolved = true
                 resolvedBatch = job.data.batch.map(tx => ({ ...tx, success: true }))
             } else {
                 if (trace.children[0].children?.length !== job.data.batch.length) {
                     throw new DelayedError(PHASE_3_DELAY)
                 }
 
-                resolved = true
                 resolvedBatch = job.data.batch.map(tx => {
                     const traceTx = trace.children[0].children.find(child => {
                         const payload = child.transaction.in_msg.decoded_body.custom_payload
@@ -83,8 +78,13 @@ export class ValidatingService extends WorkerHost implements OnModuleInit, OnMod
                     return { ...tx, success: traceTx.transaction.success }
                 })
 
-                if (resolvedBatch.some(tx => !tx.success)) throw new UnrecoverableError(PHASE_3_ERROR)
+                if (resolvedBatch.some(tx => !tx.success)) {
+                    throw new UnrecoverableError(PHASE_3_ERROR)
+                }
             }
+
+            const messages = resolvedBatch.map(tx => ({ value: JSON.stringify(tx) }))
+            await this.producer.send({ topic: 'notify', messages, acks: 1 })
         } catch (error) {
             if (error instanceof DelayedError) {
                 await job.moveToDelayed(Date.now() + 15000, job.token)
@@ -101,11 +101,6 @@ export class ValidatingService extends WorkerHost implements OnModuleInit, OnMod
                     ],
                     acks: 1
                 })
-            }
-        } finally {
-            if (resolved) {
-                const messages = resolvedBatch.map(tx => ({ value: JSON.stringify(tx) }))
-                await this.producer.send({ topic: 'notify', messages, acks: 1 })
             }
         }
     }
