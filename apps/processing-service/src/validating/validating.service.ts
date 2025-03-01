@@ -1,58 +1,112 @@
+import {
+    PHASE_1_DELAY, PHASE_1_ERROR, PHASE_2_DELAY,
+    PHASE_2_ERROR, PHASE_3_DELAY, PHASE_3_ERROR
+} from "./constants/reasons"
 import { Processor, WorkerHost } from "@nestjs/bullmq"
 import axios from "axios"
-import { Job, UnrecoverableError } from "bullmq"
+import { DelayedError, Job, UnrecoverableError } from "bullmq"
 import { Trace } from "./types/trace"
-import { ClientKafka } from "@nestjs/microservices"
-import { Inject } from "@nestjs/common"
-import { delayJob } from "./utils/delay"
 import { ConfigService } from "@nestjs/config"
 import { JobData } from "@shared"
+import { BlockchainService } from "../blockchain/blockchain.service"
+import { Kafka, Producer } from "kafkajs"
+import { producerConfig } from "../config/kafka/producer.config"
+import { OnModuleDestroy, OnModuleInit } from "@nestjs/common"
 
 @Processor(`${process.env.ASSET.toLowerCase()}-batches`, { concurrency: 5 })
-export class ValidatingService extends WorkerHost {
+export class ValidatingService extends WorkerHost implements OnModuleInit, OnModuleDestroy {
+    private readonly kafka: Kafka
+    private readonly producer: Producer
+
     constructor(
-        @Inject('BATCHES_VALIDATOR') private readonly batchesValidator: ClientKafka,
-        private readonly configService: ConfigService
-    ) { super() }
+        private readonly blockchainService: BlockchainService,
+        private readonly env: ConfigService
+    ) {
+        super()
+
+        this.kafka = new Kafka({
+            clientId: `${this.env.get('ASSET').toLowerCase()}-batches-emitter`,
+            brokers: this.env.get('BROKERS').split(';')
+        })
+
+        this.producer = this.kafka.producer(producerConfig)
+    }
+
+    async onModuleInit() {
+        await this.producer.connect()
+    }
+
+    async onModuleDestroy() {
+        await this.producer.disconnect()
+    }
 
     async process(job: Job<JobData>) {
         const { data: trace, status } = await axios.get<Trace>(
-            `${this.configService.get('TONAPI_URL')}/traces/${job.data.hash}`, {
-            headers: { Authorization: `Bearer ${this.configService.get('TONAPI_KEY')}` },
+            `${this.env.get('TONAPI_URL')}/traces/${job.data.hash}`, {
+            headers: { Authorization: `Bearer ${this.env.get('TONAPI_KEY')}` },
             validateStatus: status => status === 200 || status === 404,
         })
 
-        if (status === 404) {
-            await delayJob(job, 15, 'Trace not found')
-        }
+        let resolved = false
+        let resolvedBatch = job.data.batch
 
-        if (trace.transaction.action_phase.skipped_actions === 1) {
-            throw new UnrecoverableError('Internal message value exceeds balance')
-        }
+        try {
+            if (status === 404) throw new DelayedError(PHASE_1_DELAY)
 
-        if (!trace.children) {
-            await delayJob(job, 5, 'Trace is loading for transaction with opcode 0xae42e5a4')
-        }
-
-        if (!trace.children[0].transaction.success) {
-            throw new UnrecoverableError('Internal transfer was not successful')
-        }
-
-        if (this.configService.get('ASSET') !== 'TON') {
-            if (trace.children[0].children?.length !== job.data.batch.length) {
-                await delayJob(job, 5, 'Trace is loading for transactions on self jetton wallet')
+            if (trace.transaction.action_phase.skipped_actions === 1) {
+                resolved = true
+                throw new UnrecoverableError(PHASE_1_ERROR)
             }
 
-            const successList = trace.children[0].children.map(childTrace => childTrace.transaction.success)
+            if (!trace.children) throw new DelayedError(PHASE_2_DELAY)
 
-            if (successList.filter(Boolean).length !== job.data.batch.length) {
-                throw new UnrecoverableError(`Jetton transfers were not successful`)
+            if (!trace.children[0].transaction.success) {
+                resolved = true
+                throw new UnrecoverableError(PHASE_2_ERROR)
+            }
+
+            if (this.env.get('ASSET') === 'TON') {
+                resolved = true
+                resolvedBatch = job.data.batch.map(tx => ({ ...tx, success: true }))
+            } else {
+                if (trace.children[0].children?.length !== job.data.batch.length) {
+                    throw new DelayedError(PHASE_3_DELAY)
+                }
+
+                resolved = true
+                resolvedBatch = job.data.batch.map(tx => {
+                    const traceTx = trace.children[0].children.find(child => {
+                        const payload = child.transaction.in_msg.decoded_body.custom_payload
+                        return tx.chargeId === this.blockchainService.parsePayload(payload)
+                    })
+
+                    return { ...tx, success: traceTx.transaction.success }
+                })
+
+                if (resolvedBatch.some(tx => !tx.success)) throw new UnrecoverableError(PHASE_3_ERROR)
+            }
+        } catch (error) {
+            if (error instanceof DelayedError) {
+                await job.moveToDelayed(Date.now() + 15000, job.token)
+                throw new DelayedError(error.message)
+            } else if (error instanceof UnrecoverableError) {
+                const notifyMessages = resolvedBatch.map(tx => ({ value: JSON.stringify(tx) }))
+                const refundMessages = resolvedBatch.filter(tx => !tx.success)
+                    .map(tx => ({ value: JSON.stringify(tx) }))
+
+                await this.producer.sendBatch({
+                    topicMessages: [
+                        { topic: 'notify', messages: notifyMessages },
+                        { topic: 'refund', messages: refundMessages }
+                    ],
+                    acks: 1
+                })
+            }
+        } finally {
+            if (resolved) {
+                const messages = resolvedBatch.map(tx => ({ value: JSON.stringify(tx) }))
+                await this.producer.send({ topic: 'notify', messages, acks: 1 })
             }
         }
-
-        this.batchesValidator.emit<string, JobData>('resolved-batches', {
-            hash: trace.transaction.hash,
-            batch: job.data.batch
-        })
     }
 }

@@ -8,6 +8,7 @@ import { WalletMetadata } from "./types/metadata"
 import { ConfigService } from "@nestjs/config"
 import { Batch } from "../processing/types/batch"
 import { KafkaRetriableException } from "@nestjs/microservices"
+import { Transaction } from "@shared"
 
 @Injectable()
 export class BlockchainService {
@@ -62,6 +63,12 @@ export class BlockchainService {
         return externalMessage.hash().toString('hex')
     }
 
+    parsePayload(payload: string) {
+        const slice = Cell.fromHex(payload).beginParse()
+        const data = slice.loadBuffer(slice.remainingBits / 8)
+        return data.toString('utf-8')
+    }
+
     private buildExternal(external: ExternalMessage) {
         const ext_msg_body = beginCell()
             .storeUint(external.subwalletId, 32)
@@ -111,7 +118,7 @@ export class BlockchainService {
         return int_msg
     }
 
-    private packActions(batch: Batch['batch'], queryId: number) {
+    private packActions(batch: Transaction[], queryId: number) {
         let out_actions: OutAction[]
 
         if (this.walletMetadata.asset === 'TON') {
@@ -132,7 +139,7 @@ export class BlockchainService {
                     to: Address.parse(this.walletMetadata.jettonAddress),
                     value: toNano(0.05),
                     bounce: false,
-                    body: this.buildJettonTransfer(message.address, message.amount, queryId)
+                    body: this.buildJettonTransfer(message.address, message.amount, queryId, message.chargeId)
                 })
             }))
         }
@@ -140,8 +147,12 @@ export class BlockchainService {
         return out_actions
     }
 
-    private buildJettonTransfer(address: string, amount: number, queryId: number): Cell {
+    private buildJettonTransfer(address: string, amount: number, queryId: number, payload: string): Cell {
         const precision = Number(this.configService.get('ASSET_PRECISION'))
+
+        const custom_payload = beginCell()
+            .storeBuffer(Buffer.from(payload))
+            .endCell()
 
         return beginCell()
             .storeUint(this.JETTON_TRANSFER, 32)
@@ -149,7 +160,8 @@ export class BlockchainService {
             .storeCoins(amount * 10 ** precision)
             .storeAddress(Address.parse(address))
             .storeAddress(Address.parse(this.walletMetadata.address))
-            .storeBit(0)
+            .storeBit(1)
+            .storeRef(custom_payload)
             .storeCoins(1)
             .storeBit(0)
             .endCell()

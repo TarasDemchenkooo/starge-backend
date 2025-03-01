@@ -1,20 +1,12 @@
-import { ConfigService } from "@nestjs/config"
-import { ClientProvider, Transport } from "@nestjs/microservices"
+import { ProducerConfig } from "kafkajs"
 
-export const buildProducerConfig = (configService: ConfigService): ClientProvider => ({
-    transport: Transport.KAFKA,
-    options: {
-        postfixId: '',
-        client: {
-            clientId: `${configService.get('ASSET').toLowerCase()}-batches-validator`,
-            brokers: configService.get('BROKERS').split(';')
-        },
-        producerOnlyMode: true,
-        producer: {
-            allowAutoTopicCreation: false,
-        },
-        send: {
-            acks: 1
-        }
-    },
-})
+export const producerConfig: ProducerConfig = {
+    allowAutoTopicCreation: false,
+    retry: {
+        retries: 5,
+        multiplier: 2,
+        initialRetryTime: 300,
+        maxRetryTime: 15000,
+        factor: 0.2
+    }
+}

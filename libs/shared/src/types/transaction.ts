@@ -3,4 +3,5 @@ export interface Transaction {
     address: string
     amount: number
     chargeId: string
+    success: boolean
 }

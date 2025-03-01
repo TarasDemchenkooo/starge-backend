@@ -1,0 +1,6 @@
+export const PHASE_1_DELAY = 'Trace not found'
+export const PHASE_2_DELAY = 'Trace is loading for transaction with opcode 0xae42e5a4'
+export const PHASE_3_DELAY = 'Trace is loading for transactions on self jetton wallet'
+export const PHASE_1_ERROR = 'Internal message value exceeds balance'
+export const PHASE_2_ERROR = 'Internal transfer was not successful'
+export const PHASE_3_ERROR = 'Jetton transfers were not successful'

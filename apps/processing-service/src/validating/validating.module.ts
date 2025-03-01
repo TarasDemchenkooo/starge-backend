@@ -1,18 +1,9 @@
 import { Module } from "@nestjs/common"
 import { ValidatingService } from "./validating.service"
-import { ClientsModule } from "@nestjs/microservices"
-import { ConfigModule, ConfigService } from "@nestjs/config"
-import { buildProducerConfig } from "../config/kafka/producer.config"
+import { BlockchainModule } from "../blockchain/blockchain.module"
 
 @Module({
-    imports: [
-        ClientsModule.registerAsync([{
-            name: 'BATCHES_VALIDATOR',
-            imports: [ConfigModule],
-            inject: [ConfigService],
-            useFactory: buildProducerConfig
-        }])
-    ],
+    imports: [BlockchainModule],
     providers: [ValidatingService]
 })
 
