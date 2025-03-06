@@ -1,10 +1,10 @@
 import { Module } from "@nestjs/common"
-import { BotUpdate } from "./bot.update"
-import { BotService } from "./bot.service"
 import { TelegrafModule } from "nestjs-telegraf"
 import { ConfigModule, ConfigService } from "@nestjs/config"
 import { DatabaseModule } from "@db"
 import { buildBotConfig } from "../config/bot.config"
+import { PaymentUpdate } from "./payment.update"
+import { PaymentService } from "./payment.service"
 
 @Module({
     imports: [
@@ -15,7 +15,7 @@ import { buildBotConfig } from "../config/bot.config"
             useFactory: buildBotConfig
         })
     ],
-    providers: [BotUpdate, BotService]
+    providers: [PaymentUpdate, PaymentService]
 })
 
-export class BotModule { }
+export class PaymentModule { }

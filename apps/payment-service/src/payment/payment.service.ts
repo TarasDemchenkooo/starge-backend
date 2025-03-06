@@ -6,7 +6,7 @@ import axios from 'axios'
 import { parseInvoice } from './utils/invoiceParser'
 
 @Injectable()
-export class BotService {
+export class PaymentService {
     constructor(
         private readonly db: DatabaseService,
         private readonly configService: ConfigService,

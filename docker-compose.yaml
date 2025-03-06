@@ -8,13 +8,13 @@ services:
         ports:
             - 5172:5172
         volumes:
-            - ./apps/api/src:/app/apps/api/src
+            - ./apps/api-gateway/src:/app/apps/api-gateway/src
             - ./libs:/app/libs
             - ./prisma:/app/prisma
         env_file:
-            - ./apps/api/.env
+            - ./apps/api-gateway/.env
             - ./prisma/.env
-        command: npm run dev api
+        command: npm run dev api-gateway
 
     payment-service:
         container_name: payment-service
@@ -23,16 +23,34 @@ services:
         ports:
             - 5171:5171
         volumes:
-            - ./apps/bot-service/src:/app/apps/bot-service/src
+            - ./apps/payment-service/src:/app/apps/payment-service/src
             - ./libs:/app/libs
             - ./prisma:/app/prisma
         env_file:
-            - ./apps/bot-service/.env
+            - ./apps/payment-service/.env
             - ./prisma/.env
         depends_on:
             kafka:
                 condition: service_healthy
-        command: npm run dev bot-service
+        command: npm run dev payment-service
+
+    ton-aggregator:
+        container_name: ton-aggregator
+        build:
+            target: development
+        volumes:
+            - ./apps/transaction-aggregator/src:/app/apps/transaction-aggregator/src
+            - ./libs:/app/libs
+            - ./prisma:/app/prisma
+        env_file:
+            - ./apps/transaction-aggregator/.env
+            - ./prisma/.env
+        depends_on:
+            kafka:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+        command: npm run dev transaction-aggregator
 
     ton-processor:
         container_name: ton-processor
@@ -51,6 +69,22 @@ services:
             redis:
                 condition: service_healthy
         command: npm run dev processing-service
+
+    notification-service:
+        container_name: notification-service
+        build:
+            target: development
+        volumes:
+            - ./apps/notification-service/src:/app/apps/notification-service/src
+            - ./libs:/app/libs
+            - ./prisma:/app/prisma
+        env_file:
+            - ./apps/notification-service/.env
+            - ./prisma/.env
+        depends_on:
+            kafka:
+                condition: service_healthy
+        command: npm run dev notification-service
 
     redis:
         image: redis/redis-stack:latest

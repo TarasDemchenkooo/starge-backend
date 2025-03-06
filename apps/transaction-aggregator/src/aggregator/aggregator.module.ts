@@ -6,7 +6,7 @@ import { DatabaseModule } from "@db"
 @Module({
     imports: [
         DatabaseModule,
-        ScheduleModule
+        ScheduleModule.forRoot()
     ],
     providers: [AggregatorService]
 })
