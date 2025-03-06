@@ -1,13 +1,25 @@
-import { Symbol } from "@prisma/client"
 import { escapeChars } from "./escapeChars"
+import { Caption } from "../types/caption"
 
-export const formatCaption = (address: string, amount: number, route: Symbol) => {
-    const title = "_*Your swap has been successfully processed\\\\!*_"
-    const addressTitle = "*Receiver address:*"
-    const userAddress = `>\`${escapeChars(address)}\``
-    const amountTitle = "*Amount:*"
-    const userAmount = `>\`${escapeChars(String(amount))} $${route}\``
-    const tip = "_You can check the transaction details using the link below\\\\._"
+export const formatCaption = (data: Caption) => {
+    if (data.success) {
+        const title = "_*Your swap has been successfully processed\\\\!*_"
+        const addressTitle = "*Receiver address:*"
+        const userAddress = `>\`${escapeChars(data.address)}\``
+        const amountTitle = "*Amount:*"
+        const userAmount = `>\`${escapeChars(String(data.amount))} $${data.route}\``
+        const tip = "_You can check the transaction details using the link below\\\\._"
 
-    return `${title}\n\n${addressTitle}\n${userAddress}\n\n${amountTitle}\n${userAmount}\n\n${tip}`
+        return `${title}\n\n${addressTitle}\n${userAddress}\n\n${amountTitle}\n${userAmount}\n\n${tip}`
+    } else {
+        const title = "_*Your swap could not be processed due to an error\\\\.*_"
+        const addressTitle = "*Receiver address:*"
+        const userAddress = `>\`${escapeChars(data.address)}\``
+        const amountTitle = "*Amount:*"
+        const userAmount = `>\`${escapeChars(String(data.amount))} $${data.route}\``
+        const refund = "*We will automatically refund your payment within 15 minutes\\\\. If you have any questions, you can contact our support\\\\.*"
+        const tip = "_You can check the transaction details using the link below\\\\._"
+
+        return `${title}\n\n${addressTitle}\n${userAddress}\n\n${amountTitle}\n${userAmount}\n\n${refund}\n\n${tip}`
+    }
 }

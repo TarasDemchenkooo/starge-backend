@@ -7,11 +7,11 @@ import axios from "axios"
 import { DelayedError, Job, UnrecoverableError } from "bullmq"
 import { Trace } from "./types/trace"
 import { ConfigService } from "@nestjs/config"
-import { JobData } from "@shared"
 import { BlockchainService } from "../blockchain/blockchain.service"
 import { Kafka, Producer } from "kafkajs"
 import { producerConfig } from "../config/kafka/producer.config"
 import { OnModuleDestroy, OnModuleInit } from "@nestjs/common"
+import { JobData } from "./types/job"
 
 @Processor(`${process.env.ASSET.toLowerCase()}-batches`, { concurrency: 5 })
 export class ValidatingService extends WorkerHost implements OnModuleInit, OnModuleDestroy {
@@ -63,7 +63,7 @@ export class ValidatingService extends WorkerHost implements OnModuleInit, OnMod
             }
 
             if (this.env.get('ASSET') === 'TON') {
-                resolvedBatch = job.data.batch.map(tx => ({ ...tx, success: true }))
+                resolvedBatch = job.data.batch.map(tx => ({ ...tx, hash: trace.transaction.hash, success: true }))
             } else {
                 if (trace.children[0].children?.length !== job.data.batch.length) {
                     throw new DelayedError(PHASE_3_DELAY)
@@ -75,7 +75,9 @@ export class ValidatingService extends WorkerHost implements OnModuleInit, OnMod
                         return tx.chargeId === this.blockchainService.parsePayload(payload)
                     })
 
-                    return { ...tx, success: traceTx.transaction.success }
+                    const success = traceTx.transaction.success
+
+                    return { ...tx, hash: success ? trace.transaction.hash : null, success }
                 })
 
                 if (resolvedBatch.some(tx => !tx.success)) {
@@ -101,6 +103,8 @@ export class ValidatingService extends WorkerHost implements OnModuleInit, OnMod
                     ],
                     acks: 1
                 })
+            } else {
+                throw new Error(error)
             }
         }
     }

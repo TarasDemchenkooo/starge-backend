@@ -75,6 +75,7 @@ export class BotService {
                         address,
                         amount: target,
                         chargeId,
+                        hash: null,
                         success: false
                     },
                     tokenSymbol: route

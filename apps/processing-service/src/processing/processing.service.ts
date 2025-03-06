@@ -3,8 +3,8 @@ import { BlockchainService } from "../blockchain/blockchain.service"
 import { InjectQueue } from "@nestjs/bullmq"
 import { Queue } from "bullmq"
 import { Batch } from "./types/batch"
-import { JobData } from "@shared"
 import { ConfigService } from "@nestjs/config"
+import { JobData } from "../validating/types/job"
 
 @Injectable()
 export class ProcessingService {
