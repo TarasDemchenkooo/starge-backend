@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common'
 import { UpdateSettingsDto } from './dto/settings.dto'
-import { settingsSelect, transactionSelect, userSelect } from '../selects'
 import { DatabaseService } from '@db'
 import { InvoiceDto } from '@shared'
 import { ConfigService } from '@nestjs/config'
@@ -25,31 +24,11 @@ export class UserService {
         this.botToken = this.configService.get('BOT_TOKEN')
     }
 
-    async findOrCreate(id: string) {
-        const user = await this.db.user.findUnique({
+    async create(id: string) {
+        await this.db.user.upsert({
             where: { id },
-            select: userSelect
-        })
-
-        if (!user) {
-            return this.db.user.create({
-                data: {
-                    id,
-                    transactions: { create: [] },
-                    settings: { create: {} }
-                },
-                select: userSelect
-            })
-        }
-
-        return user
-    }
-
-    updateUserSettings(id: string, settings: UpdateSettingsDto) {
-        return this.db.settings.update({
-            where: { userId: id },
-            data: settings,
-            select: settingsSelect
+            update: {},
+            create: { id, transactions: { create: [] } },
         })
     }
 
@@ -76,7 +55,30 @@ export class UserService {
     getHistory(id: string) {
         return this.db.transaction.findMany({
             where: { userId: id },
-            select: transactionSelect
+            select: {
+                address: true,
+                starsAmount: true,
+                tokenAmount: true,
+                tokenSymbol: true,
+                lpFee: true,
+                bchFees: true,
+                status: true,
+                chargeId: true,
+                hash: true,
+                createdAt: true
+            }
+        })
+    }
+
+    getSettings(id: string) {
+        return this.db.user.findUnique({ where: { id }, select: { notifications: true } })
+    }
+
+    updateSettings(id: string, settings: UpdateSettingsDto) {
+        return this.db.user.update({
+            where: { id },
+            data: settings,
+            select: { notifications: true }
         })
     }
 }

@@ -1,16 +1,6 @@
-import { Symbol } from "@prisma/client"
-import { IsBoolean, IsEnum, IsOptional } from "class-validator"
+import { IsBoolean } from "class-validator"
 
 export class UpdateSettingsDto {
-    @IsOptional()
-    @IsEnum(Symbol)
-    tokenSymbol?: Symbol
-
-    @IsOptional()
     @IsBoolean()
-    vibration?: boolean
-
-    @IsOptional()
-    @IsBoolean()
-    notifications?: boolean
+    notifications: boolean
 }

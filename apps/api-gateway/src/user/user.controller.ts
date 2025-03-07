@@ -8,20 +8,25 @@ import { InvoiceDto } from '@shared'
 @Controller('user')
 @UseGuards(AuthGuard('jwt'))
 export class UserController {
-  constructor(private readonly userService: UserService) { }
+    constructor(private readonly userService: UserService) { }
 
-  @Patch('settings')
-  updateSettings(@User() id: string, @Body() updateSettingsDto: UpdateSettingsDto) {
-    return this.userService.updateUserSettings(id, updateSettingsDto)
-  }
+    @Post('invoice')
+    async openInvoice(@Body() invoice: InvoiceDto) {
+        return this.userService.generateLink(invoice)
+    }
 
-  @Post('invoice')
-  async openInvoice(@Body() invoice: InvoiceDto) {
-    return this.userService.generateLink(invoice)
-  }
+    @Get('history')
+    getHistory(@User() id: string) {
+        return this.userService.getHistory(id)
+    }
 
-  @Get('history')
-  getHistory(@User() id: string) {
-    return this.userService.getHistory(id)
-  }
+    @Get('settings')
+    async getSettings(@User() id: string) {
+        return this.userService.getSettings(id)
+    }
+
+    @Patch('settings')
+    async updateSettings(@User() id: string, @Body() updateSettingsDto: UpdateSettingsDto) {
+        return this.userService.updateSettings(id, updateSettingsDto)
+    }
 }

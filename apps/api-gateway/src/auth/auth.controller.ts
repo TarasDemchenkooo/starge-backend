@@ -14,9 +14,9 @@ export class AuthController {
   @Post('')
   @UseGuards(InitDataGuard)
   async auth(@Body('initData', InitDataPipe) userId: string) {
-    const user = await this.userService.findOrCreate(userId)
+    await this.userService.create(userId)
     const jwt = this.authService.generateJwt(userId)
 
-    return { user, jwt }
+    return { jwt }
   }
 }

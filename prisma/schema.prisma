@@ -9,9 +9,9 @@ datasource db {
 }
 
 model User {
-  id           String        @id @unique
-  transactions Transaction[]
-  settings     Settings?
+  id            String        @id @unique
+  notifications Boolean       @default(true)
+  transactions  Transaction[]
 
   @@map("users")
 }
@@ -28,21 +28,10 @@ model Transaction {
   bchFees     Int               @map("blockchain_fees")
   status      TransactionStatus @default(PENDING)
   chargeId    String            @unique @map("charge_id")
-  hash        String?           @unique @map("transaction_hash")
+  hash        String?           @map("transaction_hash")
   createdAt   DateTime          @default(now()) @map("created_at")
 
   @@map("transactions")
-}
-
-model Settings {
-  id            String  @id @default(uuid())
-  user          User    @relation(fields: [userId], references: [id])
-  userId        String  @unique @map("user_id")
-  tokenSymbol   Symbol  @default(TON) @map("token_symbol")
-  vibration     Boolean @default(true) @map("in_app_vibration")
-  notifications Boolean @default(true) @map("in_app_notifications")
-
-  @@map("settings")
 }
 
 model Outbox {

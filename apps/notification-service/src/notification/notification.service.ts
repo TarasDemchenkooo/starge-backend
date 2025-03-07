@@ -17,10 +17,10 @@ export class NotificationService {
         const tx = await this.db.transaction.update({
             where: { chargeId: transaction.chargeId },
             data: { hash: transaction.hash, status: transaction.success ? 'CONFIRMED' : 'FAILED' },
-            select: { tokenSymbol: true, user: { select: { settings: { select: { notifications: true } } } } }
+            select: { tokenSymbol: true, user: { select: { notifications: true } } }
         })
 
-        if (tx.user.settings.notifications) {
+        if (tx.user.notifications) {
             await axios.post(`https://api.telegram.org/bot${this.env.get('BOT_TOKEN')}/sendPhoto`, {
                 chat_id: transaction.userId,
                 photo: photos[tx.tokenSymbol][transaction.success ? 'confirmed' : 'failed'],
