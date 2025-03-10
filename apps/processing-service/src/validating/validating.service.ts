@@ -47,10 +47,12 @@ export class ValidatingService extends WorkerHost implements OnModuleInit, OnMod
             validateStatus: status => status === 200 || status === 404,
         })
 
-        let resolvedBatch = job.data.batch
+        let resolvedBatch = []
 
         try {
             if (status === 404) throw new DelayedError(PHASE_1_DELAY)
+
+            resolvedBatch = job.data.batch.map(tx => ({...tx, hash: trace.transaction.hash}))
 
             if (trace.transaction.action_phase.skipped_actions === 1) {
                 throw new UnrecoverableError(PHASE_1_ERROR)
@@ -63,21 +65,19 @@ export class ValidatingService extends WorkerHost implements OnModuleInit, OnMod
             }
 
             if (this.env.get('ASSET') === 'TON') {
-                resolvedBatch = job.data.batch.map(tx => ({ ...tx, hash: trace.transaction.hash, success: true }))
+                resolvedBatch = resolvedBatch.map(tx => ({ ...tx, success: true }))
             } else {
                 if (trace.children[0].children?.length !== job.data.batch.length) {
                     throw new DelayedError(PHASE_3_DELAY)
                 }
 
-                resolvedBatch = job.data.batch.map(tx => {
+                resolvedBatch = resolvedBatch.map(tx => {
                     const traceTx = trace.children[0].children.find(child => {
                         const payload = child.transaction.in_msg.decoded_body.custom_payload
                         return tx.chargeId === this.blockchainService.parsePayload(payload)
                     })
 
-                    const success = traceTx.transaction.success
-
-                    return { ...tx, hash: success ? trace.transaction.hash : null, success }
+                    return { ...tx, success: traceTx.transaction.success }
                 })
 
                 if (resolvedBatch.some(tx => !tx.success)) {
