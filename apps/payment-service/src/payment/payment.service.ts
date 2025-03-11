@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common'
 import { DatabaseService } from '@db'
 import { ConfigService } from '@nestjs/config'
 import * as assets from './assets/assets.json'
-import axios from 'axios'
+import axios, { AxiosError } from 'axios'
 import { parseInvoice } from './utils/invoiceParser'
 
 @Injectable()
@@ -15,7 +15,9 @@ export class PaymentService {
     async checkPayment(invoice: string) {
         const parsedData = parseInvoice(invoice)
 
-        if (Date.now() > parsedData.validUntil) throw new Error('This invoice link has expired')
+        if (Date.now() > parsedData.validUntil) {
+            throw new BadRequestException('This invoice link has expired')
+        }
 
         const token = assets.find(token => token.symbol === parsedData.route)
         const ca = token.ca || 'ton'
@@ -25,28 +27,31 @@ export class PaymentService {
         const starPrice = Number(this.configService.get('STAR_PRICE'))
         const priceSlippage = Number(this.configService.get('SLIPPAGE'))
 
-        const response = await axios.get(`${tonapiUrl}/rates?tokens=${ca}&currencies=usd`, {
-            headers: { Authorization: `Bearer ${tonapiKey}` }
-        })
+        try {
+            const response = await axios.get(`${tonapiUrl}/rates?tokens=${ca}&currencies=usd`, {
+                headers: { Authorization: `Bearer ${tonapiKey}` }
+            })
 
-        const rates = response.data.rates
-        const tokenPrice = rates[Object.keys(rates)[0]].prices.USD
+            const rates = response.data.rates
+            const tokenPrice = rates[Object.keys(rates)[0]].prices.USD
 
-        const currencyPrice = starPrice / tokenPrice
-        const index = currencyPrice < 1 ? 3 : 4
-        const scientificNotation = currencyPrice.toExponential(index)
-        const formattedPrice = Number(scientificNotation)
+            const currencyPrice = starPrice / tokenPrice
+            const index = currencyPrice < 1 ? 3 : 4
+            const scientificNotation = currencyPrice.toExponential(index)
+            const formattedPrice = Number(scientificNotation)
 
-        const expectedSource = Math.ceil(parsedData.target / formattedPrice)
-        const expectedTarget = formattedPrice * parsedData.source
+            const expectedSource = Math.ceil(parsedData.target / formattedPrice)
+            const expectedTarget = formattedPrice * parsedData.source
 
-        const sourceDiff = Math.abs(expectedSource - parsedData.source) / expectedSource
-        const targetDiff = Math.abs(expectedTarget - parsedData.target) / expectedTarget
+            const sourceDiff = Math.abs(expectedSource - parsedData.source) / expectedSource
+            const targetDiff = Math.abs(expectedTarget - parsedData.target) / expectedTarget
 
-        const isAcceptableSlippage = sourceDiff <= priceSlippage || targetDiff <= priceSlippage
+            const isAcceptableSlippage = sourceDiff <= priceSlippage || targetDiff <= priceSlippage
 
-        if (!isAcceptableSlippage) {
-            throw new BadRequestException('Price slippage exceeded')
+            if (!isAcceptableSlippage) throw new Error()
+        } catch (error) {
+            throw new BadRequestException(error instanceof AxiosError ?
+                'Internal server error' : 'Price slippage exceeded')
         }
     }
 
@@ -64,7 +69,6 @@ export class PaymentService {
                     lpFee,
                     bchFees,
                     chargeId: chargeId,
-                    hash: null,
                 }
             })
 
@@ -74,9 +78,7 @@ export class PaymentService {
                         userId,
                         address,
                         amount: target,
-                        chargeId,
-                        hash: null,
-                        success: false
+                        chargeId
                     },
                     tokenSymbol: route
                 }

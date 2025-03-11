@@ -29,6 +29,7 @@ model Transaction {
   status      TransactionStatus @default(PENDING)
   chargeId    String            @unique @map("charge_id")
   hash        String?           @map("transaction_hash")
+  processedAt DateTime?         @updatedAt @map("processed_at")
   createdAt   DateTime          @default(now()) @map("created_at")
 
   @@map("transactions")

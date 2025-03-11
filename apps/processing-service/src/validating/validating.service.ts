@@ -53,7 +53,7 @@ export class ValidatingService extends WorkerHost implements OnModuleInit, OnMod
         try {
             if (status === 404) throw new DelayedError(PHASE_1_DELAY)
 
-            resolvedBatch = job.data.batch.map(tx => ({...tx, hash: trace.transaction.hash}))
+            resolvedBatch = job.data.batch.map(tx => ({ ...tx, hash: trace.transaction.hash, success: false }))
 
             if (trace.transaction.action_phase.skipped_actions === 1) {
                 throw new UnrecoverableError(PHASE_1_ERROR)

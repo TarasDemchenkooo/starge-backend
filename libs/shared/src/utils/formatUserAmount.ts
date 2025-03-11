@@ -1,4 +1,4 @@
-export function formatInvoiceAmount(amount: number, type: 'source' | 'target') {
+export function formatUserAmount(amount: number, type: 'source' | 'target') {
     const amountString = String(amount)
     const regexp = /\B(?=(\d{3})+(?!\d))/g
 

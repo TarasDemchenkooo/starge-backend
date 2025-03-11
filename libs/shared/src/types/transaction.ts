@@ -3,6 +3,6 @@ export interface Transaction {
     address: string
     amount: number
     chargeId: string
-    hash: string | null
+    hash: string
     success: boolean
 }
