@@ -12,6 +12,9 @@ export const ConsumerConfig: KafkaOptions = {
             groupId: 'notification-service-group',
             allowAutoTopicCreation: false,
             sessionTimeout: 60000
+        },
+        subscribe: {
+            fromBeginning: true
         }
     }
 }

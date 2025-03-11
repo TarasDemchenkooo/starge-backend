@@ -12,6 +12,7 @@ import { Kafka, Producer } from "kafkajs"
 import { producerConfig } from "../config/kafka/producer.config"
 import { OnModuleDestroy, OnModuleInit } from "@nestjs/common"
 import { JobData } from "./types/job"
+import { Cell } from "@ton/core"
 
 @Processor(`${process.env.ASSET.toLowerCase()}-batches`, { concurrency: 5 })
 export class ValidatingService extends WorkerHost implements OnModuleInit, OnModuleDestroy {
@@ -74,7 +75,7 @@ export class ValidatingService extends WorkerHost implements OnModuleInit, OnMod
                 resolvedBatch = resolvedBatch.map(tx => {
                     const traceTx = trace.children[0].children.find(child => {
                         const payload = child.transaction.in_msg.decoded_body.custom_payload
-                        return tx.chargeId === this.blockchainService.parsePayload(payload)
+                        return tx.chargeId === this.blockchainService.readPayload(Cell.fromHex(payload))
                     })
 
                     return { ...tx, success: traceTx.transaction.success }

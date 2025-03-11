@@ -23,7 +23,7 @@ export class RefundService implements OnModuleInit, OnModuleDestroy {
 
     async onModuleInit() {
         await this.consumer.connect()
-        await this.consumer.subscribe({ topic: 'refund' })
+        await this.consumer.subscribe({ topic: 'refund', fromBeginning: true })
 
         await this.consumer.run({
             eachMessage: async ({ message }) => {

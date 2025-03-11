@@ -5,6 +5,7 @@ import { InvoiceDto } from '@shared'
 import { ConfigService } from '@nestjs/config'
 import { PaymentFees } from './types/paymentFees'
 import axios from 'axios'
+import { formatInvoiceAmount } from './utils/formatInvoiceAmount'
 
 @Injectable()
 export class UserService {
@@ -33,11 +34,13 @@ export class UserService {
     }
 
     async generateLink({ address, source, target, route }: InvoiceDto) {
+        const userSource = formatInvoiceAmount(source, 'source')
+        const userTarget = formatInvoiceAmount(target, 'target')
         const lpFee = Math.ceil(source * this.paymentFees.comission)
         const bchFees = route === 'TON' ? this.paymentFees.tonFees : this.paymentFees.jettonFees
 
-        const title = `${target} ${route}`
-        const description = `Confirm your swap of ${title} for ${source} STARS`
+        const title = `${userTarget} ${route}`
+        const description = `Swap ${userSource} STAR${source > 1 ? 'S' : ''} for ${userTarget} ${route}`
         const validUntil = Date.now() + 15 * 60 * 1000
         const payload = [address, source, target, route, lpFee, bchFees, validUntil].join(':')
         const provider_token = ''

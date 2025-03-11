@@ -33,6 +33,19 @@ export class BlockchainService {
         }
     }
 
+    readPayload(cell: Cell): string {
+        const slice = cell.beginParse()
+        const buffer = slice.loadBuffer(slice.remainingBits / 8)
+        let string = buffer.toString()
+
+        if (slice.remainingRefs > 0) {
+            const refCell = slice.loadRef()
+            return string += this.readPayload(refCell)
+        }
+
+        return string
+    }
+
     async sendBatch({ queryId, batch }: Batch): Promise<string> {
         const outActions = this.packActions(batch, queryId)
 
@@ -61,12 +74,6 @@ export class BlockchainService {
         }
 
         return externalMessage.hash().toString('hex')
-    }
-
-    parsePayload(payload: string) {
-        const slice = Cell.fromHex(payload).beginParse()
-        const data = slice.loadBuffer(slice.remainingBits / 8)
-        return data.toString('utf-8')
     }
 
     private buildExternal(external: ExternalMessage) {
@@ -150,10 +157,6 @@ export class BlockchainService {
     private buildJettonTransfer(address: string, amount: number, queryId: number, payload: string): Cell {
         const precision = Number(this.configService.get('ASSET_PRECISION'))
 
-        const custom_payload = beginCell()
-            .storeBuffer(Buffer.from(payload))
-            .endCell()
-
         return beginCell()
             .storeUint(this.JETTON_TRANSFER, 32)
             .storeUint(queryId, 64)
@@ -161,9 +164,24 @@ export class BlockchainService {
             .storeAddress(Address.parse(address))
             .storeAddress(Address.parse(this.walletMetadata.address))
             .storeBit(1)
-            .storeRef(custom_payload)
+            .storeRef(this.writePayload(payload))
             .storeCoins(1)
             .storeBit(0)
             .endCell()
+    }
+
+    private writePayload(string: string): Cell {
+        const builder = beginCell()
+        const bytes = Math.floor(builder.availableBits / 8)
+
+        if (bytes < string.length) {
+            builder.storeBuffer(Buffer.from(string.substring(0, bytes)))
+            const refCell = this.writePayload(string.substring(bytes))
+            builder.storeRef(refCell)
+        } else {
+            builder.storeBuffer(Buffer.from(string))
+        }
+
+        return builder.endCell()
     }
 }
