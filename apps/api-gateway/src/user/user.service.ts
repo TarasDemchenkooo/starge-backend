@@ -56,19 +56,7 @@ export class UserService {
 
     getHistory(id: string) {
         return this.db.transaction.findMany({
-            where: { userId: id },
-            select: {
-                address: true,
-                starsAmount: true,
-                tokenAmount: true,
-                tokenSymbol: true,
-                lpFee: true,
-                bchFees: true,
-                status: true,
-                chargeId: true,
-                hash: true,
-                createdAt: true
-            }
+            where: { userId: id }
         })
     }
 

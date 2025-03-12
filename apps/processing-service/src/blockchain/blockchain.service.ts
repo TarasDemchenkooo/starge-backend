@@ -68,8 +68,8 @@ export class BlockchainService {
         try {
             await this.client.sendFile(externalMessage.toBoc())
         } catch (error) {
-            if (!error?.response?.data?.error?.includes('External message was not accepted')) {
-                throw new KafkaRetriableException('')
+            if (!error?.response?.data?.error.includes('exitcode=36')) {
+                throw new KafkaRetriableException(error)
             }
         }
 
@@ -92,12 +92,13 @@ export class BlockchainService {
             .endCell()
 
         const ext_msg = beginCell()
-            .storeUint(0b10, 2)
-            .storeAddress(undefined)
-            .storeAddress(Address.parse(external.address))
-            .storeCoins(0n)
+            .storeUint(2, 2)
             .storeUint(0, 2)
-            .storeBuilder(signed_ext_msg_body.asBuilder())
+            .storeAddress(Address.parse(external.address))
+            .storeUint(0, 4)
+            .storeBit(false)
+            .storeBit(true)
+            .storeRef(signed_ext_msg_body)
             .endCell()
 
         return ext_msg
