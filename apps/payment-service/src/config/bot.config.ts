@@ -6,7 +6,8 @@ export const buildBotConfig = (configService: ConfigService): TelegrafModuleOpti
     launchOptions: {
         webhook: {
             domain: configService.get<string>('BOT_HOST'),
-            path: configService.get<string>('BOT_PATH')
+            path: configService.get<string>('BOT_SECRET_PATH'),
+            secretToken: configService.get<string>('BOT_API_SECRET')
         }
     }
 })

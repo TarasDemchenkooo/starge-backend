@@ -4,9 +4,9 @@ import { getBotToken } from 'nestjs-telegraf'
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule)
-
     const bot = app.get(getBotToken())
-    app.use(bot.webhookCallback(process.env.BOT_PATH))
+
+    app.use(bot.webhookCallback(process.env.BOT_SECRET_PATH))
 
     await app.listen(process.env.PORT)
 }
