@@ -4,7 +4,7 @@ import { ConfigService } from "@nestjs/config"
 import { Transaction } from "@shared"
 import axios from "axios"
 import { formatCaption } from "./utils/formatCaption"
-import * as photos from './assets/photos.json'
+import { photos } from "./assets/photos"
 
 @Injectable()
 export class NotificationService {
