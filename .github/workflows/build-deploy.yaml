@@ -79,4 +79,4 @@ jobs:
             export BOT_API_SECRET=${{ secrets.BOT_API_SECRET }}
             docker compose -f docker-compose.services.yaml pull
             docker compose -f docker-compose.services.yaml up -d
-            docker image prune -f
+            docker image prune -af
