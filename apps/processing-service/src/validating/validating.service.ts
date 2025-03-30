@@ -2,7 +2,7 @@ import {
     PHASE_1_DELAY, PHASE_1_ERROR, PHASE_2_DELAY,
     PHASE_2_ERROR, PHASE_3_DELAY, PHASE_3_ERROR
 } from "./constants/reasons"
-import { Processor, WorkerHost } from "@nestjs/bullmq"
+import { OnWorkerEvent, Processor, WorkerHost } from "@nestjs/bullmq"
 import axios from "axios"
 import { DelayedError, Job, UnrecoverableError } from "bullmq"
 import { Trace } from "./types/trace"
@@ -10,9 +10,12 @@ import { ConfigService } from "@nestjs/config"
 import { BlockchainService } from "../blockchain/blockchain.service"
 import { Kafka, Producer } from "kafkajs"
 import { producerConfig } from "../config/kafka/producer.config"
-import { OnModuleDestroy, OnModuleInit } from "@nestjs/common"
+import { Inject, OnModuleDestroy, OnModuleInit } from "@nestjs/common"
 import { JobData } from "./types/job"
 import { Cell } from "@ton/core"
+import { WINSTON_MODULE_PROVIDER } from "nest-winston"
+import { Logger } from "winston"
+import { LoggerEvents } from "@shared"
 
 @Processor(`${process.env.ASSET.toLowerCase()}-batches`, { concurrency: 5 })
 export class ValidatingService extends WorkerHost implements OnModuleInit, OnModuleDestroy {
@@ -21,7 +24,8 @@ export class ValidatingService extends WorkerHost implements OnModuleInit, OnMod
 
     constructor(
         private readonly blockchainService: BlockchainService,
-        private readonly env: ConfigService
+        private readonly env: ConfigService,
+        @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger
     ) {
         super()
 
@@ -53,7 +57,11 @@ export class ValidatingService extends WorkerHost implements OnModuleInit, OnMod
         try {
             if (status === 404) throw new DelayedError(PHASE_1_DELAY)
 
-            resolvedBatch = job.data.batch.map(tx => ({ ...tx, hash: trace.transaction.hash, success: false }))
+            resolvedBatch = job.data.batch.map(tx => ({
+                ...tx,
+                hash: trace.transaction.hash,
+                success: false
+            }))
 
             if (trace.transaction.action_phase.skipped_actions === 1) {
                 throw new UnrecoverableError(PHASE_1_ERROR)
@@ -105,8 +113,18 @@ export class ValidatingService extends WorkerHost implements OnModuleInit, OnMod
                     acks: 1
                 })
             } else {
-                throw new Error(error)
+                throw new Error(error.stack)
             }
+        }
+    }
+
+    @OnWorkerEvent('failed')
+    async validateManually(job: Job) {
+        if (job.attemptsMade === 5) {
+            this.logger.error(LoggerEvents.VALIDATING_ERROR, {
+                context: job.id,
+                trace: JSON.stringify(job.stacktrace)
+            })
         }
     }
 }

@@ -5,6 +5,8 @@ import { BlockchainModule } from './blockchain/blockchain.module'
 import { ValidatingModule } from './validating/validating.module'
 import { BullModule } from '@nestjs/bullmq'
 import { buildBullConfig } from './config/bull/bull.config'
+import { WinstonModule } from 'nest-winston'
+import { winstonConfig } from '@shared'
 
 @Module({
   imports: [
@@ -14,6 +16,7 @@ import { buildBullConfig } from './config/bull/bull.config'
       inject: [ConfigService],
       useFactory: buildBullConfig
     }),
+    WinstonModule.forRoot(winstonConfig),
     ProcessingModule,
     ValidatingModule,
     BlockchainModule

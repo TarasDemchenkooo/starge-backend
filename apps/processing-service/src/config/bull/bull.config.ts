@@ -7,11 +7,11 @@ export const buildBullConfig = (configService: ConfigService): BullRootModuleOpt
         port: Number(configService.get('REDIS_PORT'))
     },
     defaultJobOptions: {
-        attempts: 3,
+        attempts: 5,
         delay: configService.get('VALIDATING_DELAY'),
         backoff: {
             type: 'exponential',
-            delay: 2000
+            delay: 1000
         },
         removeOnComplete: {
             age: Number(configService.get('WALLET_TIMEOUT'))

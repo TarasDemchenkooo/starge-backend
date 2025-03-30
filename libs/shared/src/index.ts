@@ -1,4 +1,6 @@
 export * from './dto/invoice.dto'
 export * from './types/transaction'
+export * from './types/loggerEvents'
 export * from './validators/address.validator'
 export * from './utils/formatUserAmount'
+export * from './configs/winston'

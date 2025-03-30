@@ -1,18 +1,26 @@
-import { BadRequestException, Injectable } from '@nestjs/common'
+import { BadRequestException, Inject, Injectable, ServiceUnavailableException } from '@nestjs/common'
 import { DatabaseService } from '@db'
 import { ConfigService } from '@nestjs/config'
 import * as assets from './assets/assets.json'
 import axios, { AxiosError } from 'axios'
 import { parseInvoice } from './utils/invoiceParser'
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston'
+import { Logger } from 'winston'
+import { LoggerEvents } from '@shared'
 
 @Injectable()
 export class PaymentService {
     constructor(
         private readonly db: DatabaseService,
         private readonly configService: ConfigService,
+        @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger
     ) { }
 
     async checkPayment(invoice: string) {
+        if (this.configService.get('DISABLE_PAYMENTS') === 'true') {
+            throw new ServiceUnavailableException('Payments are temporarily unavailable')
+        }
+
         const parsedData = parseInvoice(invoice)
 
         if (Date.now() > parsedData.validUntil) {
@@ -50,39 +58,48 @@ export class PaymentService {
 
             if (!isAcceptableSlippage) throw new Error()
         } catch (error) {
-            throw new BadRequestException(error instanceof AxiosError ?
-                'Internal server error' : 'Price slippage exceeded')
+            throw new BadRequestException(
+                error instanceof AxiosError ?
+                    'Internal server error' : 'Price slippage exceeded'
+            )
         }
     }
 
     async processPayment(userId: string, invoice: string, chargeId: string) {
         const { address, source, target, route, lpFee, bchFees } = parseInvoice(invoice)
+        const context = JSON.stringify({ userId, address, source, target, route, lpFee, bchFees, chargeId })
 
-        await this.db.$transaction(async tx => {
-            await tx.transaction.create({
-                data: {
-                    user: { connect: { id: userId } },
-                    address,
-                    starsAmount: source,
-                    tokenAmount: target,
-                    tokenSymbol: route,
-                    lpFee,
-                    bchFees,
-                    chargeId: chargeId,
-                }
-            })
+        this.logger.info(LoggerEvents.NEW_PAYMENT, { context })
 
-            await tx.outbox.create({
-                data: {
-                    payload: {
-                        userId,
+        try {
+            await this.db.$transaction(async tx => {
+                await tx.transaction.create({
+                    data: {
+                        user: { connect: { id: userId } },
                         address,
-                        amount: target,
-                        chargeId
-                    },
-                    tokenSymbol: route
-                }
+                        starsAmount: source,
+                        tokenAmount: target,
+                        tokenSymbol: route,
+                        lpFee,
+                        bchFees,
+                        chargeId: chargeId,
+                    }
+                })
+
+                await tx.outbox.create({
+                    data: {
+                        payload: {
+                            userId,
+                            address,
+                            amount: target,
+                            chargeId
+                        },
+                        tokenSymbol: route
+                    }
+                })
             })
-        })
+        } catch (error) {
+            this.logger.error(LoggerEvents.PAYMENT_ERROR, { context, trace: error.stack })
+        }
     }
 }

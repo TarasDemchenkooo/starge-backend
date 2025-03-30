@@ -1,9 +1,11 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common"
+import { Inject, Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 import { Consumer, Kafka } from "kafkajs"
 import { consumerConfig } from "../config/consumer.config"
-import { Transaction } from "@shared"
-import axios, { AxiosError } from "axios"
+import { LoggerEvents, Transaction } from "@shared"
+import axios from "axios"
+import { WINSTON_MODULE_PROVIDER } from "nest-winston"
+import { Logger } from "winston"
 
 @Injectable()
 export class RefundService implements OnModuleInit, OnModuleDestroy {
@@ -11,7 +13,8 @@ export class RefundService implements OnModuleInit, OnModuleDestroy {
     private readonly consumer: Consumer
 
     constructor(
-        private readonly env: ConfigService
+        private readonly env: ConfigService,
+        @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger
     ) {
         this.kafka = new Kafka({
             clientId: 'refund-service',
@@ -28,14 +31,22 @@ export class RefundService implements OnModuleInit, OnModuleDestroy {
         await this.consumer.run({
             eachMessage: async ({ message }) => {
                 const transaction: Transaction = JSON.parse(message.value.toString())
+                const refundBody = {
+                    user_id: transaction.userId,
+                    telegram_payment_charge_id: transaction.chargeId
+                }
 
                 try {
-                    await axios.post(`https://api.telegram.org/bot${this.env.get('BOT_TOKEN')}/refundStarPayment`, {
-                        user_id: transaction.userId,
-                        telegram_payment_charge_id: transaction.chargeId
-                    })
+                    const url = `https://api.telegram.org/bot${this.env.get('BOT_TOKEN')}/refundStarPayment`
+
+                    await axios.post(url, refundBody)
                 } catch (error) {
-                    if (!error.response.data.description.includes('CHARGE_ALREADY_REFUNDED')) {
+                    if (!error.response.data?.description?.includes('CHARGE_ALREADY_REFUNDED')) {
+                        this.logger.error(LoggerEvents.REFUND_ERROR, {
+                            context: JSON.stringify(refundBody),
+                            trace: error.stack
+                        })
+
                         throw new Error(error.message)
                     }
                 }
