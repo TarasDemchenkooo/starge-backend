@@ -30,24 +30,19 @@ export class RefundService implements OnModuleInit, OnModuleDestroy {
 
         await this.consumer.run({
             eachMessage: async ({ message }) => {
-                const transaction: Transaction = JSON.parse(message.value.toString())
-                const refundBody = {
-                    user_id: transaction.userId,
-                    telegram_payment_charge_id: transaction.chargeId
-                }
+                const { userId, chargeId }: Transaction = JSON.parse(message.value.toString())
+                const refundBody = { user_id: userId, telegram_payment_charge_id: chargeId }
 
                 try {
                     const url = `https://api.telegram.org/bot${this.env.get('BOT_TOKEN')}/refundStarPayment`
 
                     await axios.post(url, refundBody)
                 } catch (error) {
-                    if (!error.response.data?.description?.includes('CHARGE_ALREADY_REFUNDED')) {
+                    if (!error?.response?.data?.description?.includes('CHARGE_ALREADY_REFUNDED')) {
                         this.logger.error(LoggerEvents.REFUND_ERROR, {
                             context: JSON.stringify(refundBody),
                             trace: error.stack
                         })
-
-                        throw new Error(error.message)
                     }
                 }
             }

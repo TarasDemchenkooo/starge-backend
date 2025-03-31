@@ -7,7 +7,6 @@ import { TonClient } from "@ton/ton"
 import { WalletMetadata } from "./types/metadata"
 import { ConfigService } from "@nestjs/config"
 import { Batch } from "../processing/types/batch"
-import { KafkaRetriableException } from "@nestjs/microservices"
 import { Transaction } from "@shared"
 
 @Injectable()
@@ -68,9 +67,7 @@ export class BlockchainService {
         try {
             await this.client.sendFile(externalMessage.toBoc())
         } catch (error) {
-            if (!error?.response?.data?.error.includes('exitcode=36')) {
-                throw new KafkaRetriableException(error)
-            }
+            if (!error?.response?.data?.error?.includes('exitcode=36')) throw error
         }
 
         return externalMessage.hash().toString('hex')

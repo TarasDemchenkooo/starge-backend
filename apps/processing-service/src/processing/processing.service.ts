@@ -8,7 +8,6 @@ import { JobData } from "../validating/types/job"
 import { WINSTON_MODULE_PROVIDER } from "nest-winston"
 import { Logger } from "winston"
 import { LoggerEvents } from "@shared"
-import { KafkaRetriableException } from "@nestjs/microservices"
 
 @Injectable()
 export class ProcessingService {
@@ -43,8 +42,6 @@ export class ProcessingService {
                 context: JSON.stringify({ stage, data: context }),
                 trace: error.stack
             })
-
-            throw new KafkaRetriableException(error.message)
         }
     }
 }

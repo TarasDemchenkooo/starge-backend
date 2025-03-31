@@ -7,7 +7,6 @@ import { formatCaption } from "./utils/formatCaption"
 import { photos } from "./assets/photos"
 import { Logger } from "winston"
 import { WINSTON_MODULE_PROVIDER } from "nest-winston"
-import { KafkaRetriableException } from "@nestjs/microservices"
 
 @Injectable()
 export class NotificationService {
@@ -52,8 +51,6 @@ export class NotificationService {
                 context: JSON.stringify({ stage, data: context }),
                 trace: error.stack
             })
-
-            throw new KafkaRetriableException(error.message)
         }
     }
 }

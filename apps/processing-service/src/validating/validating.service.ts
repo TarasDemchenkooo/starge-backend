@@ -113,7 +113,7 @@ export class ValidatingService extends WorkerHost implements OnModuleInit, OnMod
                     acks: 1
                 })
             } else {
-                throw new Error(error.stack)
+                throw error
             }
         }
     }
