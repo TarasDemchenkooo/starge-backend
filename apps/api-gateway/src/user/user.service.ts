@@ -45,7 +45,7 @@ export class UserService {
         const provider_token = ''
         const currency = 'XTR'
         const price = source + lpFee + bchFees
-        const prices = [{ label: title, amount: 1 }]
+        const prices = [{ label: title, amount: price }]
 
         const response = await axios.post(`https://api.telegram.org/bot${this.botToken}/createInvoiceLink`, {
             title, description, payload, provider_token, currency, prices
